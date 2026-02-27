@@ -1,0 +1,110 @@
+[
+  {
+    "id": "T1",
+    "description": "Rename table meetings to sessions",
+    "target_type": "table",
+    "target_name": "meetings"
+  },
+  {
+    "id": "T2",
+    "description": "Rename table agents to assistants",
+    "target_type": "table",
+    "target_name": "agents"
+  },
+  {
+    "id": "T3",
+    "description": "Rename table user to users",
+    "target_type": "table",
+    "target_name": "user"
+  },
+  {
+    "id": "T4",
+    "description": "Remove column meetings.status",
+    "target_type": "column",
+    "target_name": "meetings.status"
+  },
+  {
+    "id": "T5",
+    "description": "Remove column meetings.name",
+    "target_type": "column",
+    "target_name": "meetings.name"
+  },
+  {
+    "id": "T6",
+    "description": "Remove column meetings.summary",
+    "target_type": "column",
+    "target_name": "meetings.summary"
+  },
+  {
+    "id": "T7",
+    "description": "Rename column meetings.id to meeting_id",
+    "target_type": "column",
+    "target_name": "meetings.id"
+  },
+  {
+    "id": "T8",
+    "description": "Remove column agents.name",
+    "target_type": "column",
+    "target_name": "agents.name"
+  },
+  {
+    "id": "T9",
+    "description": "Remove column agents.instructions",
+    "target_type": "column",
+    "target_name": "agents.instructions"
+  },
+  {
+    "id": "T10",
+    "description": "Remove column user.email",
+    "target_type": "column",
+    "target_name": "user.email"
+  },
+  {
+    "id": "T11",
+    "description": "Remove column session.token",
+    "target_type": "column",
+    "target_name": "session.token"
+  },
+  {
+    "id": "T12",
+    "description": "Remove column account.scope",
+    "target_type": "column",
+    "target_name": "account.scope"
+  },
+  {
+    "id": "T13",
+    "description": "Remove column verification.value",
+    "target_type": "column",
+    "target_name": "verification.value"
+  },
+  {
+    "id": "T14",
+    "description": "Remove background job that processes meeting summaries",
+    "target_type": "file",
+    "target_name": "inngest/functions.ts"
+  },
+  {
+    "id": "T15",
+    "description": "Modify webhook pipeline for meetings",
+    "target_type": "file",
+    "target_name": "app/api/webhook/route.ts"
+  },
+  {
+    "id": "T16",
+    "description": "Delete meetings server router module",
+    "target_type": "file",
+    "target_name": "modules/meetings/server/procedures.ts"
+  },
+  {
+    "id": "T17",
+    "description": "Modify premium procedures referencing meetings",
+    "target_type": "file",
+    "target_name": "modules/premium/server/procedures.ts"
+  },
+  {
+    "id": "T18",
+    "description": "Update TRPC initialization that references meetings",
+    "target_type": "file",
+    "target_name": "trpc/init.ts"
+  }
+]
