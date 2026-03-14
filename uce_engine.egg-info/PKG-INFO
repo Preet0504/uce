@@ -1,3 +1,20 @@
+Metadata-Version: 2.4
+Name: uce-engine
+Version: 0.1.1
+Summary: Unified Context Engine
+Author: UCE Contributors
+License: MIT
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Requires-Python: <3.13,>=3.10
+Description-Content-Type: text/markdown
+Requires-Dist: neo4j>=5.14.0
+Requires-Dist: watchdog>=3.0.0
+Requires-Dist: PyYAML>=6.0.1
+Requires-Dist: fastmcp>=0.1.0
+Requires-Dist: tree_sitter==0.20.1
+Requires-Dist: tree_sitter_languages==1.10.2
+
 # Unified Context Engine (UCE)
 
 UCE builds a deterministic knowledge graph of a codebase in Neo4j and exposes reasoning tools over that graph. It works across repositories, supports multiple languages, and continuously updates when files change.

@@ -1,0 +1,2 @@
+[console_scripts]
+uce = uce.run:main

@@ -1,0 +1,66 @@
+project_root: ../talkai-main/
+
+languages:
+  - python
+  - typescript
+  - javascript
+  - go
+  - java
+  - c
+  - cpp
+
+paths:
+  code:
+    - src
+  schema:
+    - src/db
+  requirements:
+    - src/requirements
+  policies:
+    - src/policies
+
+ignore:
+  - .git
+  - .next
+  - __pycache__
+  - node_modules
+  - venv
+  - dist
+  - build
+  - coverage
+  - .idea
+  - .vscode
+  - ui
+  - views
+  - public
+  - assets
+  - styles
+  - css
+  - scss
+  - .env
+  - .DS_Store
+  - "*.log"
+  - "*.tmp"
+  - "*.bak"
+  - "*.swp"
+  - "*.swo"
+  - "*.pyc"
+  - "*.class"
+  - "*.o"
+  - "*.so"
+  - "*.dll"
+  - "*.exe"
+  - "*.dylib"
+  - "*.zip"
+  - "*.tar"
+  - "*.gz"
+  - "*.7z"
+  - "*.rar"
+
+aliases:
+  "@/": src/
+
+neo4j:
+  uri: bolt://localhost:7687
+  user: neo4j
+  password: testpassword

@@ -1,0 +1,16 @@
+{
+  "total_scenarios": 18,
+  "avg_uce_coverage": 1.0,
+  "avg_vanilla_coverage": 0.1151,
+  "avg_uce_safety_score": 1.0,
+  "avg_vanilla_safety_score": 0.1151,
+  "safety_improvement": "+88%",
+  "avg_risk_score": 14.667,
+  "risk_score_stddev": 7.118,
+  "explainability_present": true,
+  "risk_awareness_present": true,
+  "plot_status": {
+    "plots_generated": true,
+    "plots_dir": "F:\\UIC\\CS540\\Projects\\uce\\evaluation\\plots"
+  }
+}

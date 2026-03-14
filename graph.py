@@ -1,19 +1,10 @@
-from neo4j import GraphDatabase
+from uce.core.graph_db import GraphDB as _GraphDB
 from config import NEO4J_URI, NEO4J_USER, NEO4J_PASS
 
-class GraphDB:
+
+class GraphDB(_GraphDB):
     def __init__(self):
-        self.driver = GraphDatabase.driver(
-            NEO4J_URI,
-            auth=(NEO4J_USER, NEO4J_PASS)
-        )
-
-    def close(self):
-        self.driver.close()
-
-    def run(self, query, **params):
-        with self.driver.session() as session:
-            return list(session.run(query, **params))
+        super().__init__(NEO4J_URI, NEO4J_USER, NEO4J_PASS)
 
 
 def create_function(graph: GraphDB, name: str, file_path: str):

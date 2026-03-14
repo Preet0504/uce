@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "uce-engine"
+version = "0.1.2"
+description = "Unified Context Engine"
+readme = {file = "README.md", content-type = "text/markdown"}
+requires-python = ">=3.10,<3.13"
+license = {text = "MIT"}
+authors = [{name = "UCE Contributors"}]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "License :: OSI Approved :: MIT License",
+]
+dependencies = [
+  "neo4j>=5.14.0",
+  "watchdog>=3.0.0",
+  "PyYAML>=6.0.1",
+  "fastmcp>=0.1.0",
+  "tree_sitter==0.20.4",
+  "tree_sitter_languages==1.10.2",
+]
+
+[project.scripts]
+uce = "uce.run:main"
+
+[tool.setuptools.packages.find]
+include = ["uce*"]
+
+[tool.setuptools]
+include-package-data = true
