@@ -1,0 +1,22 @@
+﻿{
+  "id": "uce-realm",
+  "realm": "uce-realm",
+  "displayName": "Unified Context Engine",
+  "enabled": true,
+  "roles": {
+    "realm": [
+      {
+        "name": "viewer",
+        "description": "Read-only role for UCE RBAC"
+      },
+      {
+        "name": "editor",
+        "description": "Editor role for UCE RBAC"
+      },
+      {
+        "name": "admin",
+        "description": "Admin role for UCE RBAC"
+      }
+    ]
+  }
+}

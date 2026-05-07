@@ -1,107 +1,98 @@
-# Unified Context Engine (UCE) Developer Tutorial
+﻿# UCE Tutorial
 
-## 1. Installation
+This tutorial shows how to run UCE with reproducible Docker, generate Keycloak RBAC tokens, and verify behavior in Goose.
 
-### Python Setup
-Create and activate a virtual environment, then install dependencies required by UCE and Neo4j.
+## 1) Start the Stack
 
-### Neo4j Setup
-Start Neo4j locally and set credentials in `config.py`:
-- `NEO4J_URI`
-- `NEO4J_USER`
-- `NEO4J_PASS`
-- `PROJECT_ROOT`
+```bash
+copy .env.docker.example .env.docker
+# Linux/macOS: cp .env.docker.example .env.docker
 
-## 2. Ingestion Pipeline
-
-Run ingestion in this order:
-
-### File Graph
-```
-python ingest/file_graph.py
+docker compose --env-file .env.docker up -d --build
 ```
 
-### Function Graph
-```
-python ingest/function_graph.py
+Services:
+- Neo4j: `localhost:7687`
+- Keycloak: `localhost:8080`
+- Neo4j-MCP (backend-only): `localhost:8000/mcp/`
+- UCE MCP (Goose target): `localhost:9001/mcp/`
+
+## 2) Bootstrap Keycloak Clients and Secrets
+
+```bash
+python scripts/bootstrap_keycloak.py \
+  --base-url http://localhost:8080 \
+  --public-base-url http://localhost:8080 \
+  --realm uce-realm \
+  --audience uce-mcp \
+  --access-token-lifespan-seconds 3600 \
+  --output-env-file .keycloak-secrets.env
 ```
 
-### Database Schema
-```
-python ingest/db_schema.py
+This configures:
+- realm roles (`viewer`, `editor`, `admin`)
+- clients (`uce-viewer`, `uce-editor`, `uce-admin`)
+- role and audience protocol mappers
+- regenerated client secrets
+
+## 3) Mint Viewer/Editor/Admin Tokens
+
+Use each client's generated secret from `.keycloak-secrets.env`.
+
+```powershell
+$realm = "uce-realm"
+$base = "http://localhost:8080"
+
+function Get-ClientToken($clientId, $clientSecret) {
+  (Invoke-RestMethod -Method Post `
+    -Uri "$base/realms/$realm/protocol/openid-connect/token" `
+    -ContentType "application/x-www-form-urlencoded" `
+    -Body "grant_type=client_credentials&client_id=$clientId&client_secret=$clientSecret").access_token
+}
+
+$viewerToken = Get-ClientToken "uce-viewer" "<VIEWER_SECRET>"
+$editorToken = Get-ClientToken "uce-editor" "<EDITOR_SECRET>"
+$adminToken  = Get-ClientToken "uce-admin" "<ADMIN_SECRET>"
 ```
 
-### Requirements
-```
-python ingest/requirements.py
-```
+## 4) Configure Goose Extensions
 
-### Policies
-```
-python ingest/policies.py
-```
+Create three extensions (or three profiles/sessions):
 
-### API Layer and Service Linking
-```
-python ingest/api_graph.py
-```
+- `UCE Viewer` -> `Authorization: Bearer <viewerToken>`
+- `UCE Editor` -> `Authorization: Bearer <editorToken>`
+- `UCE Admin` -> `Authorization: Bearer <adminToken>`
 
-## 3. Running Impact Analysis
+All point to the same endpoint:
 
-Example:
-```
-python -c "from impact import explain_change; print(explain_change('table','meetings'))"
-```
+- `http://127.0.0.1:9001/mcp/`
 
-This returns a structured JSON response with:
-- affected_files
-- affected_functions
-- affected_apis
-- affected_services
-- violated_requirements
-- enforced_policies
-- risk_score
-- trace_paths
+Do not expose `http://127.0.0.1:8000/mcp/` to end users.
 
-## 4. Understanding Trace Output
+## 5) Validate RBAC Behavior
 
-Trace paths are deterministic and hierarchical:
-- `Table -> File -> Function -> API -> Service`
-- `Table -> Requirement -> Policy`
+Run the same mutation request in each role profile:
 
-Example:
-```
-Table meetings -> File app/api/webhook/route.ts -> Function POST -> API POST /api/webhook -> Service webhook
-Table meetings -> Requirement RQ-003 -> Policy P-001
-```
+1. Viewer: `write_file` should be denied.
+2. Editor: write in allowed scope should succeed.
+3. Editor: write in protected RBAC/policy path should be denied.
+4. Admin: write/delete in admin scope should succeed.
 
-## 5. Extending the Graph
+Use `authorize_change` to inspect why a path was allowed/denied.
 
-### Add Requirements
-Create a new markdown file in `requirements/` with:
-- `ID: RQ-XXX`
-- `Title: ...`
-- `Description: ...`
+## 6) Compliance/Impact Queries in Goose
 
-Run:
-```
-python ingest/requirements.py
-```
+Ask Goose to call:
+- `risk_assessment`
+- `explain_change`
+- `impact_analysis`
 
-### Add Policies
-Create a markdown file in `policies/` with:
-- `ID: P-XXX`
-- `Description: ...`
-- `Enforces: RQ-XXX, RQ-YYY`
+These read graph relationships and report signals including `violated_requirements` and policy links when available.
 
-Run:
-```
-python ingest/policies.py
-```
+## 7) Shutdown and Cleanup
 
-### Add Service Layers
-Create service-related code in `modules/<service>/server/` or an API route in `app/api/`.
-Run:
-```
-python ingest/api_graph.py
+```bash
+docker compose --env-file .env.docker down
+# destructive reset:
+# docker compose --env-file .env.docker down -v
 ```

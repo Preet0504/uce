@@ -1,1 +1,8 @@
-uce
+core
+ingestion
+neo4j_mcp
+reasoning
+run
+run_uce
+runtime
+server

@@ -18,6 +18,9 @@ paths:
     - src/requirements
   policies:
     - src/policies
+  rbac:
+    - src/rbac
+  backend: []
 
 ignore:
   - .git

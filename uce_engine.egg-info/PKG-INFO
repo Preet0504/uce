@@ -1,6 +1,6 @@
 Metadata-Version: 2.4
-Name: uce-engine
-Version: 0.1.1
+Name: uce_engine
+Version: 0.2.1
 Summary: Unified Context Engine
 Author: UCE Contributors
 License: MIT
@@ -12,169 +12,215 @@ Requires-Dist: neo4j>=5.14.0
 Requires-Dist: watchdog>=3.0.0
 Requires-Dist: PyYAML>=6.0.1
 Requires-Dist: fastmcp>=0.1.0
-Requires-Dist: tree_sitter==0.20.1
+Requires-Dist: mcp>=0.1.0
+Requires-Dist: anthropic>=0.25.0
+Requires-Dist: openai>=1.0.0
+Requires-Dist: tree_sitter==0.20.4
 Requires-Dist: tree_sitter_languages==1.10.2
+Requires-Dist: pydantic>=2.0.0
+Requires-Dist: starlette>=0.36.0
+Requires-Dist: tiktoken>=0.5.0
 
-# Unified Context Engine (UCE)
+﻿# Unified Context Engine (UCE)
 
-UCE builds a deterministic knowledge graph of a codebase in Neo4j and exposes reasoning tools over that graph. It works across repositories, supports multiple languages, and continuously updates when files change.
+UCE builds a deterministic knowledge graph over code, schema, requirements, policies, and RBAC authority rules in Neo4j, then exposes reasoning and mutation tools through an MCP server.
 
-This package is **pip-installable** and **CLI-friendly**.
+## What You Get
 
-## What UCE Does
-- Ingests source code, schema, requirements, and policies into a Neo4j graph.
-- Tracks files, functions, classes, methods, tables, columns, requirements, and policies.
-- Provides deterministic impact analysis and risk assessment.
-- Keeps the graph up-to-date via a file watcher.
-- Exposes reasoning tools through an MCP server.
+- `uce` CLI for ingestion + watcher + MCP server
+- `neo4j-mcp` CLI for Neo4j MCP bridge (used by LLM ingestion)
+- Graph reasoning tools (`impact_analysis`, `explain_change`, `risk_assessment`)
+- RBAC-gated mutation tools (`authorize_change`, `write_file`, `delete_file`)
 
-## Supported Languages
-UCE uses Tree-sitter and supports:
-- Python
-- TypeScript
-- JavaScript
-- Go
-- Java
-- C
-- C++
+## Architecture (Important)
 
-## Prerequisites
-- **Python 3.10+** (recommended: 3.10 on Windows due to Tree-sitter wheels)
-- **Neo4j** running locally or remotely
+- **Goose connects to UCE MCP only**: `http://127.0.0.1:9001/mcp/`
+- **Neo4j-MCP is backend-only**: `http://127.0.0.1:8000/mcp/`
+- UCE uses Neo4j-MCP internally for LLM ingestion operations.
 
-### Neo4j Setup (Local)
-1. Install Neo4j Desktop or Neo4j Server.
-2. Start a database and note the Bolt URI (default: `bolt://localhost:7687`).
-3. Set a username and password.
+If Goose is connected directly to Neo4j-MCP, RBAC can be bypassed.
 
-### Neo4j Setup (Docker)
+## Quickstart (Recommended: Reproducible Docker)
+
+### 1) Prepare environment file
+
 ```bash
-docker run --name neo4j-uce -p7474:7474 -p7687:7687 \
-  -e NEO4J_AUTH=neo4j/testpassword \
-  neo4j:5
+copy .env.docker.example .env.docker
+# Linux/macOS: cp .env.docker.example .env.docker
 ```
 
-## Install
+Edit `.env.docker` if you need different ports, credentials, target repo path, or LLM provider settings.
+
+### 2) Start full stack
+
+```bash
+docker compose --env-file .env.docker up -d --build
+```
+
+This starts:
+- Neo4j (`7687`, `7474`)
+- Keycloak (`8080`)
+- Neo4j-MCP (`8000`)
+- UCE MCP (`9001`)
+
+### 3) Bootstrap Keycloak realm clients, role mappers, and fresh secrets
+
+```bash
+python scripts/bootstrap_keycloak.py \
+  --base-url http://localhost:8080 \
+  --public-base-url http://localhost:8080 \
+  --realm uce-realm \
+  --audience uce-mcp \
+  --access-token-lifespan-seconds 3600 \
+  --output-env-file .keycloak-secrets.env
+```
+
+This script ensures:
+- realm roles: `viewer`, `editor`, `admin`
+- clients: `uce-viewer`, `uce-editor`, `uce-admin`
+- mappers:
+  - hardcoded `role` claim
+  - custom audience claim (`aud=uce-mcp`)
+- regenerated client secrets (no hardcoded demo secrets)
+
+### 4) Mint role tokens
+
+Use values from `.keycloak-secrets.env`.
+
+Example (PowerShell):
+
+```powershell
+$realm = "uce-realm"
+$base = "http://localhost:8080"
+
+function Get-ClientToken($clientId, $clientSecret) {
+  (Invoke-RestMethod -Method Post `
+    -Uri "$base/realms/$realm/protocol/openid-connect/token" `
+    -ContentType "application/x-www-form-urlencoded" `
+    -Body "grant_type=client_credentials&client_id=$clientId&client_secret=$clientSecret").access_token
+}
+
+$viewerToken = Get-ClientToken "uce-viewer" "<VIEWER_SECRET>"
+$editorToken = Get-ClientToken "uce-editor" "<EDITOR_SECRET>"
+$adminToken  = Get-ClientToken "uce-admin" "<ADMIN_SECRET>"
+```
+
+### 5) Configure Goose extensions
+
+Create three Goose extensions (or profiles/sessions):
+
+- `UCE Viewer`
+- `UCE Editor`
+- `UCE Admin`
+
+All three use the same URL:
+- `http://127.0.0.1:9001/mcp/`
+
+Each uses a different auth header:
+- `Authorization: Bearer <viewer_token>`
+- `Authorization: Bearer <editor_token>`
+- `Authorization: Bearer <admin_token>`
+
+## RBAC Demo Walkthrough
+
+1. Viewer tries `write_file` -> denied.
+2. Editor writes to allowed app path -> allowed.
+3. Editor tries writing RBAC policy path -> denied.
+4. Admin writes/deletes in admin-approved scope -> allowed.
+
+### Escalation prevention settings
+
+Use these for hard enforcement:
+
+```env
+RBAC_ENABLED=true
+RBAC_ENFORCE_MODE=enforced
+RBAC_DENY_DEFAULT=true
+```
+
+Protect policy sources so non-admin users cannot self-promote by editing governance files.
+
+## Manual Setup (Without Docker)
+
+### Prerequisites
+
+- Python `>=3.10,<3.13`
+- Neo4j running and reachable
+- Keycloak running (if RBAC enabled)
+
+### Install
+
 ```bash
 pip install uce-engine
 ```
 
-## Configure
-Create a `config.yaml` file in any folder (recommended in the repo you want to analyze).
+### Create config
 
-Example:
+Run with:
+
+```bash
+uce --config path/to/config.yaml
+```
+
+Minimal `config.yaml` shape:
+
 ```yaml
-project_root: ../talkai-main/
-
-languages:
-  - python
-  - typescript
-  - javascript
-  - go
-  - java
-  - c
-  - cpp
-
+project_root: .
+languages: [python, typescript, javascript, go, java, c, cpp]
 paths:
-  code:
-    - src
-  schema:
-    - src/db
-  requirements:
-    - src/requirements
-  policies:
-    - src/policies
-
-ignore:
-  - .git
-  - .next
-  - __pycache__
-  - node_modules
-  - venv
-  - dist
-  - build
-  - coverage
-  - .idea
-  - .vscode
-  - ui
-  - views
-  - public
-  - assets
-  - styles
-  - css
-  - scss
-  - ".log"
-
-aliases:
-  "@/": src/
-
+  code: [.] 
+  schema: [db, src/db]
+  requirements: [requirements, src/requirements, artifacts/requirements]
+  policies: [policies, src/policies, artifacts/policies]
+  rbac: [rbac, src/rbac, artifacts/rbac]
+  backend: [src, server, app]
+  identifiers: []
+ignore: [.git, node_modules, venv, .venv, dist, build, __pycache__]
+aliases: {}
 neo4j:
   uri: bolt://localhost:7687
   user: neo4j
   password: testpassword
 ```
 
-### How `ignore` Works
-`ignore` entries are **substring path filters** applied to relative file paths. If a file path contains `/ui/` or starts with `ui/`, it will be skipped.
+### Required env for RBAC mode
 
-Globs like `"*.log"` are treated as **literal substrings** unless you customize the matcher.
-
-## Run (CLI)
-From anywhere:
-```bash
-uce --config path/to/config.yaml
-```
-
-This will:
-1. Load configuration
-2. Connect to Neo4j
-3. Build or update the graph
-4. Start the file watcher
-5. Launch the MCP server
-
-## Run (Library)
-```python
-from uce import run_uce
-
-run_uce("path/to/config.yaml")
+```env
+RBAC_ENABLED=true
+RBAC_ENFORCE_MODE=enforced
+RBAC_DENY_DEFAULT=true
+RBAC_JWT_ISSUER=http://localhost:8080/realms/uce-realm
+RBAC_JWT_AUDIENCE=uce-mcp
+RBAC_JWKS_URI=http://localhost:8080/realms/uce-realm/protocol/openid-connect/certs
+RBAC_CLOCK_SKEW_SECONDS=60
+UCE_MCP_TRANSPORT=http
 ```
 
 ## MCP Tools
-UCE exposes reasoning tools via MCP:
+
 - `impact_analysis`
 - `explain_change`
 - `risk_assessment`
+- `count_functions_in_file`
+- `find_identifier_usage`
+- `authorize_change`
+- `write_file`
+- `delete_file`
 
-These tools query the graph (no ingestion logic).
+## Additional Docs
 
-## What Nodes Are In The Graph
-- `File`
-- `Function`
-- `Class`
-- `Method`
-- `Table`
-- `Column`
-- `Requirement`
-- `Policy`
+- Tutorial: [TUTORIAL.md](TUTORIAL.md)
+- Demo script: [DEMO_SCRIPT.md](DEMO_SCRIPT.md)
+- Operator runbook: [OPERATOR_RUNBOOK.md](OPERATOR_RUNBOOK.md)
+- Release checklist: [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md)
 
-If you want additional node types (e.g., Dependencies, Endpoints, Services), add them in ingestion and reasoning layers.
+## Notes on LLM Ingestion
 
-## Typical Workflow
-1. Install Neo4j and start it.
-2. Create `config.yaml` pointing to your repo.
-3. Run `uce --config config.yaml`.
-4. Query the MCP server or Neo4j to explore the graph.
+Requirements, policies, and RBAC documents are ingested through the LLM pipeline. Ensure your `.env`/`.env.docker` includes either:
 
-## Troubleshooting
-**Neo4j auth error**
-- Verify `neo4j.uri`, `neo4j.user`, `neo4j.password` in `config.yaml`.
-- Make sure the database is running.
-
-**Tree-sitter parser error on Windows**
-- Use Python 3.10 in a clean venv.
-
-**No schema/requirements/policies detected**
-- Check `paths.schema`, `paths.requirements`, `paths.policies` in `config.yaml`.
+- OpenAI credentials (`LLM_PROVIDER=openai`, `OPENAI_API_KEY=...`), or
+- Local OpenAI-compatible endpoint (`LLM_PROVIDER=local`, `LOCAL_LLM_BASE_URL=...`, etc.).
 
 ## License
+
 MIT

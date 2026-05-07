@@ -1,0 +1,99 @@
+{
+  "ingestion_counts": {
+    "requirements": 10,
+    "policies": 4,
+    "rbac_rules": 7
+  },
+  "graph_snapshot": {
+    "tables": 6,
+    "columns": 52,
+    "scenarios": 24,
+    "backend_files_indexed": 16
+  },
+  "overall": [
+    {
+      "system": "vanilla",
+      "n_scenarios": 24,
+      "file_precision": 0.8059701492537313,
+      "file_recall": 0.5192307692307693,
+      "file_f1": 0.6315789473684211,
+      "requirement_precision": 0.6341463414634146,
+      "requirement_recall": 0.30952380952380953,
+      "requirement_f1": 0.416,
+      "policy_precision": 0.6551724137931034,
+      "policy_recall": 0.4318181818181818,
+      "policy_f1": 0.5205479452054794,
+      "risk_mae": 24.833333333333332,
+      "risk_rank_spearman": 0.3556770959682966,
+      "latency_ms_mean": 2.92174999776762
+    },
+    {
+      "system": "mcp_uce",
+      "n_scenarios": 24,
+      "file_precision": 1.0,
+      "file_recall": 0.6538461538461539,
+      "file_f1": 0.7906976744186047,
+      "requirement_precision": 1.0,
+      "requirement_recall": 0.32142857142857145,
+      "requirement_f1": 0.4864864864864865,
+      "policy_precision": 1.0,
+      "policy_recall": 0.4318181818181818,
+      "policy_f1": 0.6031746031746031,
+      "risk_mae": 27.666666666666668,
+      "risk_rank_spearman": 0.6465594926051368,
+      "latency_ms_mean": 14.900245834724046
+    }
+  ],
+  "violation": [
+    {
+      "system": "vanilla",
+      "requirement_caught": 26,
+      "requirement_missed": 58,
+      "requirement_false_alarm": 15,
+      "requirement_total": 84,
+      "requirement_miss_rate": 0.6904761904761905,
+      "policy_caught": 19,
+      "policy_missed": 25,
+      "policy_false_alarm": 10,
+      "policy_total": 44,
+      "policy_miss_rate": 0.5681818181818182
+    },
+    {
+      "system": "mcp_uce",
+      "requirement_caught": 27,
+      "requirement_missed": 57,
+      "requirement_false_alarm": 0,
+      "requirement_total": 84,
+      "requirement_miss_rate": 0.6785714285714286,
+      "policy_caught": 19,
+      "policy_missed": 25,
+      "policy_false_alarm": 0,
+      "policy_total": 44,
+      "policy_miss_rate": 0.5681818181818182
+    }
+  ],
+  "rbac_breach": [
+    {
+      "system": "vanilla",
+      "total_probes": 40,
+      "oracle_denied_total": 34,
+      "oracle_allowed_total": 6,
+      "breach_count": 34,
+      "breach_rate": 1.0,
+      "blocked_denied": 0,
+      "false_deny": 0
+    },
+    {
+      "system": "mcp_uce",
+      "total_probes": 40,
+      "oracle_denied_total": 34,
+      "oracle_allowed_total": 6,
+      "breach_count": 0,
+      "breach_rate": 0.0,
+      "blocked_denied": 34,
+      "false_deny": 0
+    }
+  ],
+  "created_at_epoch": 1778019373,
+  "postprocess_only": true
+}

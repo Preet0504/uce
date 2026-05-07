@@ -1,1 +1,17 @@
-include README.md
+exclude .env
+exclude .env.*
+exclude *.env
+include .env.example
+include .env.docker.example
+include core/.env.example
+include Dockerfile
+include docker-compose.yml
+include RELEASE_CHECKLIST.md
+include OPERATOR_RUNBOOK.md
+include DOCUMENTATION.md
+include TUTORIAL.md
+include TECHNICAL_REPORT.md
+include graph_schema.md
+include scripts/bootstrap_keycloak.py
+recursive-include docker *.yaml
+recursive-include keycloak/import *.json

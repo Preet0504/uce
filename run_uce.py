@@ -1,4 +1,4 @@
-import uce.run as uce_run
+import run as uce_run
 
 
 def main() -> None:

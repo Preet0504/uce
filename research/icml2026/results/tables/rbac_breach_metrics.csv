@@ -1,0 +1,3 @@
+system,total_probes,oracle_denied_total,oracle_allowed_total,breach_count,breach_rate,blocked_denied,false_deny
+vanilla,40,34,6,34,1.0,0,0
+mcp_uce,40,34,6,0,0.0,34,0

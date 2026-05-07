@@ -1,2 +1,3 @@
 [console_scripts]
-uce = uce.run:main
+neo4j-mcp = neo4j_mcp.server:cli
+uce = run:main

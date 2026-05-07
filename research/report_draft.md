@@ -7,17 +7,17 @@ UCE builds a deterministic graph of files, tables, and columns and exposes impac
 ## Experimental Setup
 - Project: TalkAI (TypeScript full-stack)
 - Graph inputs: file dependencies, database schema (tables + columns), and deterministic linking
-- Scenarios: 18 controlled change tasks in `evaluation/scenarios.json`
-- Evaluation runner: `evaluation/run_evaluation.py`
-- Outputs: `evaluation/results.json`, `evaluation/summary.json`, charts in `evaluation/plots/`
+- Scenarios: controlled change tasks (table, column, file)
+- Evaluation runner: script MCP tool calls (impact/risk) and collect results
+- Outputs: results.json, summary.json, optional plots
 
 ## Results
 Populate this section after running the evaluation.
-- Average UCE coverage: see `evaluation/summary.json`
-- Average vanilla coverage: see `evaluation/summary.json`
-- Safety improvement: see `evaluation/summary.json`
-- Risk score distribution: `evaluation/plots/risk_hist.png`
-- Scenario comparison: `evaluation/plots/scenario_comparison_table.png`
+- Average UCE coverage: summary.json
+- Average vanilla coverage: summary.json
+- Safety improvement: summary.json
+- Risk score distribution: plots (optional)
+- Scenario comparison: plots (optional)
 
 ## Discussion
 Interpret the magnitude of coverage and safety improvements. Highlight that UCE provides deterministic risk scoring and explainability via known graph traversal and Cypher queries, while vanilla provides no structured impact analysis.
