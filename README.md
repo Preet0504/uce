@@ -1,96 +1,116 @@
 # Unified Context Engine (UCE)
 
-UCE is a policy-aware change intelligence platform for software teams.
+UCE is a policy-aware context and governance engine for software-changing AI assistants.
 
-It builds a graph-native context model (code, schema, requirements, policy, RBAC authority), runs impact and risk reasoning over that graph, and exposes safe MCP tools for both read analysis and controlled file mutation.
+It builds a deterministic graph over code, schema, requirements, policies, and RBAC rules, then exposes reasoning and guarded mutation tools through MCP.
 
-## Why UCE Exists
+## What Problem UCE Solves
 
-Most code assistants can propose edits quickly but cannot reliably answer:
+Most assistants can write code, but they cannot reliably answer:
 
-- Which requirement might this break?
-- Which policy or control is impacted?
-- Is this write operation authorized for this caller and path?
-- What is the transitive blast radius across services and schemas?
+- Which requirement will this break?
+- Which policy is affected?
+- Who is authorized to edit this file/path?
+- What is the blast radius across imports, schema, and backend paths?
 
-UCE closes that gap with deterministic ingestion, governance-aware reasoning, and RBAC-enforced mutation tooling.
+UCE was built to close this trust gap with deterministic graph reasoning and RBAC enforcement.
+
+## Background and Motivation
+
+This project started from an on-premise assistant goal: keep private engineering context local while still getting useful AI support.
+
+The project evolved into UCE because "better prompts" alone were not enough for governance-critical workflows. Teams need auditable, reproducible evidence for change impact and authorization decisions.
+
+Canonical final report:
+
+- `research/final_report/CS540_Final_Project_Report_UCE_Preet_Patel.docx`
+
+Supplemental benchmark artifacts:
+
+- `research/supplemental_benchmarks/`
+
+## How UCE Works
+
+1. Ingest deterministic context into Neo4j:
+- code structure (files/functions/classes/imports)
+- schema (tables/columns)
+- requirements and policies
+- RBAC authority rules
+
+2. Expose graph-backed MCP tools:
+- impact/risk/explain tools
+- introspection tools
+- authorization + gated write/delete tools
+
+3. Enforce RBAC at mutation time:
+- viewer/editor/admin token claims
+- deny-by-default mode support
+- path-specific allow/deny logic
+
+## Architecture
+
+High-level architecture:
+
+![UCE Architecture](research/final_report/assets/00_Simple_Architecture_Overview_UCE.png)
+
+Deterministic vs optional LLM ingestion lanes:
+
+![Ingestion Architecture](research/final_report/assets/09_Ingestion_Architecture_Deterministic_vs_LLM.png)
+
+Generated benchmark architecture figure:
+
+![Generated Architecture Figure](research/supplemental_benchmarks/results/figures/architecture_overview.png)
 
 ## Core Capabilities
 
-- Deterministic graph ingestion for code, schema, identifiers, and structural relationships.
-- LLM-assisted ingestion for requirements, policies, and RBAC authority rules.
-- Graph reasoning tools for impact, explainability, and preflight risk scoring.
-- JWT-backed RBAC gate with deny-by-default and path-specific enforcement.
-- MCP mutation tools (`write_file`, `delete_file`) that enforce authorization before change.
-- End-to-end local stack via Docker Compose (Neo4j + Keycloak + Neo4j-MCP + UCE MCP).
+- Deterministic graph ingestion for code/schema/governance artifacts.
+- Optional LLM-assisted extraction for underspecified docs.
+- Graph reasoning tools for impact, explainability, and preflight risk.
+- JWT-backed RBAC gate with deny-by-default support.
+- Safe mutation tools (`write_file`, `delete_file`) behind authorization checks.
+- Full local stack via Docker Compose (Neo4j + Keycloak + Neo4j-MCP + UCE MCP).
 
-## High-Level Architecture
+## Results Snapshot (From Stored Artifacts)
 
-```text
-Goose / MCP Client
-        |
-        |  Bearer JWT (viewer/editor/admin)
-        v
- UCE MCP Server (port 9001)
-        |
-        |-- reasoning tools (impact/risk/explain)
-        |-- authorization tool (authorize_change)
-        |-- guarded mutation tools (write/delete)
-        |
-        v
-     Neo4j Graph (port 7687)
-        ^
-        |
- Neo4j-MCP bridge (port 8000, backend-only)
-        ^
-        |
- LLM ingestion pipeline (requirements/policies/rbac)
-```
+Using the corrected real no-tool baseline (`llama3:instruct`) versus MCP-UCE graph run:
 
-Critical rule:
+- Requirement caught-any rate: `0.550` (no-tool) vs `0.773` (MCP-UCE)
+- Policy caught-any rate: `0.368` (no-tool) vs `0.714` (MCP-UCE)
+- RBAC breach rate on oracle-denied probes: `0.647` (no-tool) vs `0.000` (MCP-UCE)
 
-- Connect external agents to UCE MCP (`9001`) only.
-- Do not expose Neo4j-MCP (`8000`) to end users.
+Result visuals:
 
-## Repository Layout
+![Requirement and Policy Capture](research/supplemental_benchmarks/results/figures/real_llm_requirement_policy_violation.png)
 
-```text
-core/                 # config, graph DB adapter, RBAC engine, risk model
-ingestion/            # parser + graph builders + LLM ingestion pipeline
-reasoning/            # impact analysis and trace logic
-runtime/              # watcher + graph updater orchestration
-server/               # FastMCP server + tool definitions
-neo4j_mcp/            # backend Neo4j MCP bridge
-scripts/              # operational scripts (e.g., Keycloak bootstrap)
-tests/                # RBAC and ingestion-focused tests
-artifacts/            # requirements and policy source documents
-docker/               # Docker runtime config
-research/             # reports, benchmark scripts, experiment outputs
-```
+![RBAC Breach Rate](research/supplemental_benchmarks/results/figures/real_llm_rbac_breach_rate.png)
 
-## Quickstart (Docker, Recommended)
+Detailed baseline explanation:
 
-### 1) Prepare environment file
+- `research/supplemental_benchmarks/results/real_llm_baseline/README.md`
+
+## Quick Start (Spoon-Fed Path)
+
+### Step 1: Prepare env file
 
 ```bash
 copy .env.docker.example .env.docker
 # Linux/macOS: cp .env.docker.example .env.docker
 ```
 
-### 2) Start full stack
+### Step 2: Bring up the full stack
 
 ```bash
 docker compose --env-file .env.docker up -d --build
 ```
 
-Services:
+Expected services:
 
-- Neo4j: `localhost:7687` and Browser `localhost:7474`
+- Neo4j: `localhost:7687`, Browser `localhost:7474`
 - Keycloak: `localhost:8080`
 - Neo4j-MCP (backend-only): `localhost:8000/mcp/`
-- UCE MCP (external client target): `localhost:9001/mcp/`
+- UCE MCP (client target): `localhost:9001/mcp/`
 
-### 3) Bootstrap Keycloak realm roles, clients, and secrets
+### Step 3: Bootstrap Keycloak roles/clients/secrets
 
 ```bash
 python scripts/bootstrap_keycloak.py \
@@ -102,14 +122,7 @@ python scripts/bootstrap_keycloak.py \
   --output-env-file .keycloak-secrets.env
 ```
 
-This configures:
-
-- roles: `viewer`, `editor`, `admin`
-- clients: `uce-viewer`, `uce-editor`, `uce-admin`
-- audience mapper: `aud=uce-mcp`
-- rotated client secrets for all three clients
-
-### 4) Mint role tokens (PowerShell example)
+### Step 4: Mint role tokens (PowerShell)
 
 ```powershell
 $realm = "uce-realm"
@@ -127,19 +140,26 @@ $editorToken = Get-ClientToken "uce-editor" "<EDITOR_SECRET>"
 $adminToken  = Get-ClientToken "uce-admin" "<ADMIN_SECRET>"
 ```
 
-### 5) Point Goose profiles to UCE MCP
+### Step 5: Connect your MCP client to UCE
 
-Endpoint:
+Use endpoint:
 
 - `http://127.0.0.1:9001/mcp/`
 
-Headers:
+Use header:
 
-- viewer: `Authorization: Bearer <viewerToken>`
-- editor: `Authorization: Bearer <editorToken>`
-- admin: `Authorization: Bearer <adminToken>`
+- `Authorization: Bearer <token>`
 
-## Local Installation (Without Docker)
+Create role-specific sessions for viewer/editor/admin tokens.
+
+### Step 6: Validate RBAC behavior
+
+1. Viewer tries `write_file`: should be denied.
+2. Editor writes allowed app path: should succeed.
+3. Editor writes protected policy/RBAC path: should be denied.
+4. Admin writes/deletes allowed admin scope: should succeed.
+
+## Local Install (Without Docker)
 
 ### Prerequisites
 
@@ -147,7 +167,7 @@ Headers:
 - Neo4j reachable from host
 - Keycloak reachable if RBAC enabled
 
-### Install from PyPI
+### Install
 
 ```bash
 pip install uce-engine
@@ -163,13 +183,11 @@ CLI options:
 
 - `--skip-refresh`
 - `--skip-llm-ingestion`
-- `--skip-ingestion` (skip both refresh + llm ingestion)
+- `--skip-ingestion`
 - `--no-watcher`
 - `--neo4j-uri`, `--neo4j-user`, `--neo4j-password`
 
 ## Configuration Model
-
-Main config is `config.yaml`.
 
 ```yaml
 project_root: .
@@ -190,7 +208,7 @@ neo4j:
   password: testpassword
 ```
 
-RBAC environment variables:
+RBAC env defaults for strict mode:
 
 ```env
 RBAC_ENABLED=true
@@ -228,50 +246,43 @@ Governance and mutation:
 - `write_file`
 - `delete_file`
 
-## RBAC Validation Scenarios
-
-Expected behavior in `enforced` mode:
-
-1. Viewer calling `write_file` gets denied.
-2. Editor can write allowed app paths.
-3. Editor is blocked from policy/RBAC-protected paths.
-4. Admin can write/delete paths granted by admin rules.
-
-Use `authorize_change` before mutations to get explicit per-path decision trace.
-
 ## Testing
-
-Run unit tests:
 
 ```bash
 python -m unittest discover -s tests -p "test_*.py"
 ```
 
-## PyPI and Release Status
+## Regenerate Benchmarks and Final Report
+
+Follow:
+
+- `research/supplemental_benchmarks/README.md`
+
+This includes deterministic benchmark reruns, real baseline reruns, and final report DOCX regeneration.
+
+## PyPI
 
 - Package: `uce-engine`
-- PyPI project page: <https://pypi.org/project/uce-engine/>
-- Maintainer profile: <https://pypi.org/user/preetpatel/>
-
-Current repository version in `pyproject.toml` is `0.2.1`.
-Published PyPI versions may lag repository head, which is expected during active development.
+- Project: <https://pypi.org/project/uce-engine/>
+- Maintainer: <https://pypi.org/user/preetpatel/>
 
 ## Documentation Map
 
-- Full docs index: [DOCUMENTATION.md](DOCUMENTATION.md)
-- Tutorial walkthrough: [TUTORIAL.md](TUTORIAL.md)
-- Operator procedures: [OPERATOR_RUNBOOK.md](OPERATOR_RUNBOOK.md)
-- Release process: [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md)
-- Technical report: [TECHNICAL_REPORT.md](TECHNICAL_REPORT.md)
-- Graph schema reference: [graph_schema.md](graph_schema.md)
-- Research notes: [research/report_draft.md](research/report_draft.md)
+- `DOCUMENTATION.md`
+- `TUTORIAL.md`
+- `OPERATOR_RUNBOOK.md`
+- `RELEASE_CHECKLIST.md`
+- `TECHNICAL_REPORT.md`
+- `graph_schema.md`
+- `research/report_draft.md`
+- `research/final_report/CS540_Final_Project_Report_UCE_Preet_Patel.docx`
+- `research/supplemental_benchmarks/README.md`
 
 ## Security Notes
 
 - Keep `.env`, `.env.docker`, and `.keycloak-secrets.env` out of git.
-- Use short token lifetimes in non-local deployments.
-- Keep Neo4j-MCP backend-only and route all agent traffic through UCE MCP.
-- Keep `RBAC_DENY_DEFAULT=true` in production-like environments.
+- Keep Neo4j-MCP backend-only; expose UCE MCP to clients.
+- Use deny-by-default RBAC in production-like environments.
 
 ## License
 

@@ -8,6 +8,7 @@ This file is the single navigation point for all UCE documentation.
 2. [TUTORIAL.md](TUTORIAL.md)
 3. [OPERATOR_RUNBOOK.md](OPERATOR_RUNBOOK.md)
 4. [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md)
+5. [research/final_report/CS540_Final_Project_Report_UCE_Preet_Patel.docx](research/final_report/CS540_Final_Project_Report_UCE_Preet_Patel.docx)
 
 ## Technical References
 
@@ -26,7 +27,9 @@ This file is the single navigation point for all UCE documentation.
 ## Research Artifacts
 
 - [research/report_draft.md](research/report_draft.md)
-- `research/icml2026/`
+- [research/supplemental_benchmarks/README.md](research/supplemental_benchmarks/README.md): exact commands to regenerate benchmark results and report assets.
+- [research/final_report/CS540_Final_Project_Report_UCE_Preet_Patel.docx](research/final_report/CS540_Final_Project_Report_UCE_Preet_Patel.docx): authoritative final project report.
+- `research/supplemental_benchmarks/`
 - `research/final_report/`
 
 ## Packaging and Distribution

@@ -1,0 +1,16 @@
+{
+  "provider": "local",
+  "model": "llama3:instruct",
+  "scenario_count": 24,
+  "tool_llm_total_ms_sum_batches": 1269024.4600998703,
+  "tool_llm_total_wall_ms": 1269381.5649000462,
+  "tool_llm_mean_per_scenario_ms": 52876.01917082793,
+  "planner_total_ms": 0.0,
+  "tool_execution_total_ms": 1.7501002876088023,
+  "final_generation_total_ms": 1269022.7099995827,
+  "no_tool_total_ms": 842985.7738999417,
+  "no_tool_mean_per_scenario_ms": 35124.4072458309,
+  "no_tool_scenarios": 24,
+  "tool_vs_no_tool_delta_ms": 426038.68619992863,
+  "tool_vs_no_tool_speedup_ratio": 0.6642785859569641
+}

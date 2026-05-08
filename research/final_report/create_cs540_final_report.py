@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 from pathlib import Path
 
@@ -12,8 +12,9 @@ from docx.shared import Inches, Pt, RGBColor
 ROOT = Path(__file__).resolve().parents[2]
 REPORT_DIR = ROOT / "research" / "final_report"
 ASSET_DIR = REPORT_DIR / "assets"
-RESULT_DIR = ROOT / "research" / "icml2026" / "results"
+RESULT_DIR = ROOT / "research" / "supplemental_benchmarks" / "results"
 REAL_DIR = RESULT_DIR / "real_llm_baseline"
+TOOL_LATENCY_DIR = RESULT_DIR / "tool_llm_latency"
 FIG_DIR = RESULT_DIR / "figures"
 OUT = REPORT_DIR / "CS540_Final_Project_Report_UCE_Preet_Patel.docx"
 
@@ -133,6 +134,13 @@ def load_result_tables() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     rbac_summary = pd.read_csv(REAL_DIR / "rbac_comparison_summary.csv")
     scenario_eval = pd.read_csv(REAL_DIR / "scenario_eval.csv")
     return scenario_summary, rbac_summary, scenario_eval
+
+
+def load_tool_latency_summary() -> pd.DataFrame:
+    path = TOOL_LATENCY_DIR / "tool_llm_latency_summary.csv"
+    if not path.exists():
+        return pd.DataFrame()
+    return pd.read_csv(path)
 
 
 def add_title_page(doc: Document) -> None:
@@ -402,7 +410,13 @@ def add_implementation(doc: Document) -> None:
     )
 
 
-def add_results(doc: Document, scenario_summary: pd.DataFrame, rbac_summary: pd.DataFrame, scenario_eval: pd.DataFrame) -> None:
+def add_results(
+    doc: Document,
+    scenario_summary: pd.DataFrame,
+    rbac_summary: pd.DataFrame,
+    scenario_eval: pd.DataFrame,
+    tool_latency_summary: pd.DataFrame,
+) -> None:
     doc.add_heading("5. Results", level=1)
     doc.add_heading("A. Empirical results", level=2)
     para(
@@ -425,7 +439,6 @@ def add_results(doc: Document, scenario_summary: pd.DataFrame, rbac_summary: pd.
                 dec(row["policy_f1"]),
                 pct(row["policy_caught_any_rate"]),
                 dec(row["file_f1"]),
-                f"{float(row['latency_ms_mean']):.1f}",
             ]
         )
     add_table(
@@ -438,11 +451,44 @@ def add_results(doc: Document, scenario_summary: pd.DataFrame, rbac_summary: pd.
             "Policy F1",
             "Policy caught-any",
             "File F1",
-            "Mean latency ms",
         ],
         rows,
-        "Table 2. Corrected scenario-level comparison using llama3:instruct for the no-tool LLM baseline.",
+        "Table 2. Corrected scenario-level quality comparison using llama3:instruct for the no-tool LLM baseline.",
     )
+    para(
+        doc,
+        "Latency is intentionally not included as a direct comparison in this table because the two measured scopes are different. The no-tool local LLM latency measures `llama3:instruct` prompt processing and JSON generation. The MCP-UCE latency in the benchmark artifact measures deterministic backend graph/tool execution after a tool has been invoked; it does not include a local LLM deciding to call the tool or generating the final natural-language answer. Therefore, these numbers should not be interpreted as evidence that tool-calling Llama is faster than no-tool Llama.",
+    )
+    if not tool_latency_summary.empty:
+        latency = tool_latency_summary.iloc[0]
+        no_tool_total_s = float(latency["no_tool_total_ms"]) / 1000.0
+        tool_total_s = float(latency["tool_llm_total_ms_sum_batches"]) / 1000.0
+        delta_s = float(latency["tool_vs_no_tool_delta_ms"]) / 1000.0
+        add_table(
+            doc,
+            ["Mode", "Scenarios", "Total time", "Mean per scenario", "Notes"],
+            [
+                [
+                    "No-tool llama3:instruct",
+                    str(int(latency["no_tool_scenarios"])),
+                    f"{no_tool_total_s:.1f} s",
+                    f"{float(latency['no_tool_mean_per_scenario_ms']) / 1000.0:.1f} s",
+                    "Single local LLM generation path using pasted static context.",
+                ],
+                [
+                    "Routed tool-assisted llama3:instruct + UCE output",
+                    str(int(latency["scenario_count"])),
+                    f"{tool_total_s:.1f} s",
+                    f"{float(latency['tool_llm_mean_per_scenario_ms']) / 1000.0:.1f} s",
+                    "Orchestrator calls UCE-style impact_analysis, then local LLM emits final structured output.",
+                ],
+            ],
+            "Table 3. End-to-end 24-scenario latency comparison.",
+        )
+        para(
+            doc,
+            f"The fair end-to-end latency comparison shows that routed tool-assisted output was slower in this local run: {tool_total_s:.1f} seconds versus {no_tool_total_s:.1f} seconds for the no-tool baseline, a difference of {delta_s:.1f} seconds over 24 scenarios. This does not weaken the quality/safety result; it means UCE improves policy, requirement, and RBAC behavior at the cost of additional local generation time when the final answer copies large tool-derived result arrays.",
+        )
     para(
         doc,
         "The no-tool LLM caught at least one implicated requirement in 55.0% of scenarios that had requirement truth labels, while MCP-UCE caught at least one in 77.3%. The no-tool LLM caught at least one implicated policy in 36.8% of relevant scenarios, while MCP-UCE did so in 71.4%. MCP-UCE also had higher F1 for files, requirements, and policies. This supports the main hypothesis: a local LLM with static pasted context is useful, but deterministic graph context improves governance-aware coverage.",
@@ -481,7 +527,7 @@ def add_results(doc: Document, scenario_summary: pd.DataFrame, rbac_summary: pd.
             "False deny",
         ],
         rows,
-        "Table 3. RBAC probe results.",
+        "Table 4. RBAC probe results.",
     )
     para(
         doc,
@@ -510,7 +556,7 @@ def add_results(doc: Document, scenario_summary: pd.DataFrame, rbac_summary: pd.
         doc,
         ["Scenario", "Type", "Req. caught/true", "Policy caught/true", "Req. F1", "Policy F1"],
         detail_rows,
-        "Table 4. Per-scenario no-tool local LLM governance detection outcomes.",
+        "Table 5. Per-scenario no-tool local LLM governance detection outcomes.",
     )
     para(
         doc,
@@ -572,6 +618,7 @@ def add_references(doc: Document) -> None:
 def main() -> None:
     REPORT_DIR.mkdir(parents=True, exist_ok=True)
     scenario_summary, rbac_summary, scenario_eval = load_result_tables()
+    tool_latency_summary = load_tool_latency_summary()
 
     doc = Document()
     set_doc_style(doc)
@@ -584,7 +631,7 @@ def main() -> None:
     doc.add_page_break()
     add_implementation(doc)
     doc.add_page_break()
-    add_results(doc, scenario_summary, rbac_summary, scenario_eval)
+    add_results(doc, scenario_summary, rbac_summary, scenario_eval, tool_latency_summary)
     doc.add_page_break()
     add_waiting_room(doc)
     add_references(doc)
@@ -595,3 +642,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+

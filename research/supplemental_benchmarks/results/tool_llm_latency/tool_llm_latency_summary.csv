@@ -1,0 +1,2 @@
+provider,model,scenario_count,tool_llm_total_ms_sum_batches,tool_llm_total_wall_ms,tool_llm_mean_per_scenario_ms,planner_total_ms,tool_execution_total_ms,final_generation_total_ms,no_tool_total_ms,no_tool_mean_per_scenario_ms,no_tool_scenarios,tool_vs_no_tool_delta_ms,tool_vs_no_tool_speedup_ratio
+local,llama3:instruct,24,1269024.4600998703,1269381.5649000462,52876.01917082793,0.0,1.7501002876088023,1269022.7099995827,842985.7738999417,35124.4072458309,24,426038.68619992863,0.6642785859569641
