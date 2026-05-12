@@ -57,10 +57,6 @@ Deterministic vs optional LLM ingestion lanes:
 
 ![Ingestion Architecture](research/final_report/assets/09_Ingestion_Architecture_Deterministic_vs_LLM.png)
 
-Generated benchmark architecture figure:
-
-![Generated Architecture Figure](research/supplemental_benchmarks/results/figures/architecture_overview.png)
-
 ## Core Capabilities
 
 - Deterministic graph ingestion for code/schema/governance artifacts.
