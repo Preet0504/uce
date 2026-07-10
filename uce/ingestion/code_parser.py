@@ -220,6 +220,15 @@ def _extract_import(node, source: bytes) -> str | None:
             value = _node_text(child, source)
             return value.strip("\"'` ")
 
+    # Python's import_statement/import_from_statement have no quoted module string.
+    # The module path is a dotted_name ("uce.core.rbac") or, for relative imports
+    # ("from . import x" / "from .config import x"), a relative_import node. Either
+    # always appears before the "import" keyword and any imported-name dotted_names,
+    # so the first match in document order is the module reference, not an imported name.
+    for child in node.children:
+        if child.type in ("dotted_name", "relative_import"):
+            return _node_text(child, source)
+
     for child in node.children:
         if child.type in IDENTIFIER_NODES:
             return _node_text(child, source)

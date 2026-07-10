@@ -73,6 +73,42 @@ def test_parse_python_imports():
     assert any("os" in imp for imp in result.imports)
 
 
+# ---------------------------------------------------------------------------
+# parse_source — Python import extraction correctness
+#
+# _extract_import must return the clean module path ("uce.core.rbac"), not the raw
+# source text of the whole import statement — tree-sitter-python's import_from_statement/
+# import_statement nodes don't carry a quoted module string like JS does, so without
+# explicit dotted_name/relative_import handling this previously fell through to
+# capturing the entire statement (identifiers, parens, and all).
+# ---------------------------------------------------------------------------
+
+def test_parse_python_from_import_captures_clean_dotted_module():
+    src = b"from uce.core.rbac import ROLE_RANKS, evaluate_rules\n"
+    result = parse_source(src, "python")
+    assert "uce.core.rbac" in result.imports
+    assert not any("ROLE_RANKS" in imp for imp in result.imports)
+
+
+def test_parse_python_multiline_from_import_captures_clean_module():
+    src = b"from uce.core.rbac import (\n    ROLE_RANKS,\n    evaluate_rules,\n)\n"
+    result = parse_source(src, "python")
+    assert "uce.core.rbac" in result.imports
+    assert not any("(" in imp for imp in result.imports)
+
+
+def test_parse_python_absolute_import_captures_dotted_module():
+    src = b"import uce.core.rbac\n"
+    result = parse_source(src, "python")
+    assert "uce.core.rbac" in result.imports
+
+
+def test_parse_python_relative_import_captures_relative_module():
+    src = b"from .config import load_config\n"
+    result = parse_source(src, "python")
+    assert ".config" in result.imports
+
+
 def test_parse_python_calls_are_pairs():
     result = parse_source(PYTHON_SIMPLE, "python")
     # Every call must be a (caller, callee) tuple

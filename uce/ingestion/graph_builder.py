@@ -6,6 +6,9 @@ from uce.core.graph_db import GraphDB
 from uce.ingestion.code_parser import ParsedCode
 
 
+_PYTHON_DOTTED_IMPORT_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)+$")
+
+
 def normalize_path(path: str) -> str:
     return path.replace("\\", "/")
 
@@ -70,6 +73,15 @@ def resolve_import(
     elif normalized.startswith("."):
         source_dir = os.path.dirname(source_rel)
         candidate_base = os.path.normpath(os.path.join(project_root, source_dir, normalized))
+    elif _PYTHON_DOTTED_IMPORT_RE.match(normalized):
+        # Python absolute dotted import (e.g. "uce.core.rbac" from `from uce.core.rbac
+        # import X` / `import uce.core.rbac`) — map dots to path segments relative to
+        # project root. Bare single-segment names ("os", "logging") are deliberately
+        # excluded: they're indistinguishable from stdlib/third-party names at this
+        # point, and resolving them risks a false match against an unrelated local file
+        # that happens to share the name. A multi-segment dotted path is a near-
+        # unambiguous first-party package reference.
+        candidate_base = os.path.join(project_root, *normalized.split("."))
     else:
         return None
 
@@ -89,9 +101,12 @@ def resolve_import(
         if os.path.isfile(candidate):
             return ensure_relative(candidate, project_root)
 
+    # Package-directory entry points: "index.*" (JS/TS convention) and "__init__.py"
+    # (Python convention) — e.g. `from uce.reasoning import X` refers to the package
+    # uce/reasoning/__init__.py, not a same-named file.
     index_candidates = [
         os.path.join(candidate_base, "index" + ext) for ext in extensions
-    ]
+    ] + [os.path.join(candidate_base, "__init__.py")]
     for candidate in index_candidates:
         if os.path.isfile(candidate):
             return ensure_relative(candidate, project_root)
