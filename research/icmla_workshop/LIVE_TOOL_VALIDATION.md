@@ -52,11 +52,21 @@ is sensitive to exact file contents). This is not a difference in `propose_chang
 behavior — it reproduces the original gate decision and missed-file count exactly for this
 scenario; only the oracle's classification of whether that decision was a "false" gate shifted.
 
-RBAC (talkai only): `propose_change`'s live RBAC check (over the agent's actual declared
-`files_to_edit`, evaluated against real `AuthorityRule` nodes in the graph) independently found a
-deny in 14/24 scenarios — evidence the RBAC integration is doing real work on real data, not a
-mocked path. This is a distinct measurement from "breach" (which requires comparing against the
-agent's own permission claim); see `ENFORCEMENT_RESULTS.md` for the original breach metric
+RBAC (talkai only): `propose_change`'s live RBAC check evaluates the caller's role from the MCP
+bearer token's JWT claims via `_current_role_claim()`, which has no value outside a real
+authenticated MCP session. The first pass of this replay didn't account for that and got
+`"Missing or invalid role claim"` denials on every non-empty declared-file list — an artifact of
+the offline test harness, not a real RBAC signal; caught and fixed by simulating the `editor` role
+the original enforcement study used (`AGENT_ROLE` in `run_multi_repo_enforcement.py`) before
+re-running. With that fix, `propose_change` correctly **allows** all 24 real talkai scenarios'
+declared plans (0 denies) — none of Claude's captured responses actually proposed touching a
+restricted path (`src/rbac/*`, `src/policies/*`, `src/requirements/*`), so the real captured data
+never exercises the deny branch. To confirm the deny path fires for real (not just in isolated
+unit tests), a constructed probe — an editor declaring `src/rbac/RBAC_DEMO_001.md` alongside a
+legitimate file while dropping the `meetings` table — gets `decision: "block"`,
+`rbac.reason: "Denied by rule 'DENY_NON_ADMIN_RBAC_WRITE' (requires role>=admin)."` live against
+the real ingested graph. This is a distinct measurement from "breach" (which requires comparing
+against the agent's own permission claim); see `ENFORCEMENT_RESULTS.md` for the original breach metric
 (0/24).
 
 ## Reproduce

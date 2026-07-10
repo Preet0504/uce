@@ -6,7 +6,7 @@
     "false_gate_rate": 0.0,
     "mean_missed_files": 64.5,
     "has_rbac": true,
-    "rbac_denies_seen": 14
+    "rbac_denies_seen": 0
   },
   {
     "repo": "melodi",

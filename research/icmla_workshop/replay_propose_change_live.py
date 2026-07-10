@@ -96,6 +96,14 @@ def run_repo_live(spec, ingest: bool) -> tuple[list[dict], dict]:
     srv._GATE_TOKEN_STORE = None
     srv._RBAC_CACHE = None
     srv._RBAC_CACHE_EXPIRES = 0.0
+    # A real caller's role comes from their MCP bearer token's JWT claims, resolved via
+    # _current_role_claim() -> get_access_token(). There is no authenticated MCP session in
+    # this offline replay, so that would return None and every non-empty declared_files list
+    # would be denied with "Missing or invalid role claim" regardless of the actual policy —
+    # not a meaningful RBAC signal. Simulate the same "editor" role the original enforcement
+    # study used (AGENT_ROLE in run_multi_repo_enforcement.py) so the RBAC check is evaluated
+    # for real instead of always failing on missing auth context.
+    srv._current_role_claim = lambda: "editor"
 
     schema = parse_schema(spec.schema_paths, kind=spec.schema_kind)
     import_graph = build_import_graph(spec.root, spec.code_dirs, spec.alias_map, spec.ignore)
