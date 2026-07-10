@@ -65,3 +65,8 @@ rbac:
   jwt_audience: uce-mcp
   jwks_uri: http://keycloak:8080/realms/uce-realm/protocol/openid-connect/certs
   clock_skew_seconds: 60
+
+gate:
+  enforcement: enforced
+  strict_default: true
+  token_ttl_seconds: 900

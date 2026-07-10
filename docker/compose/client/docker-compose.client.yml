@@ -118,6 +118,11 @@ services:
     container_name: uce-client-engine
     restart: unless-stopped
     command: ["uce", "--config", "/workspace/config.yaml"]
+    extra_hosts:
+      # Docker Desktop (Mac/Windows) resolves this automatically; Linux needs the explicit
+      # host-gateway mapping. Needed so LOCAL_LLM_BASE_URL=http://host.docker.internal:11434/v1
+      # (a local Ollama on the host) actually resolves from inside the container on every OS.
+      - "host.docker.internal:host-gateway"
     depends_on:
       neo4j:
         condition: service_healthy
@@ -147,6 +152,12 @@ services:
       RBAC_JWT_AUDIENCE: "${RBAC_JWT_AUDIENCE:-uce-mcp}"
       RBAC_JWKS_URI: "${RBAC_JWKS_URI:-http://keycloak:8080/realms/${KEYCLOAK_REALM:-uce-realm}/protocol/openid-connect/certs}"
       RBAC_CLOCK_SKEW_SECONDS: "${RBAC_CLOCK_SKEW_SECONDS:-60}"
+
+      UCE_GATE_ENFORCEMENT: "${UCE_GATE_ENFORCEMENT:-enforced}"
+      UCE_GATE_STRICT_DEFAULT: "${UCE_GATE_STRICT_DEFAULT:-true}"
+      UCE_GATE_TOKEN_TTL_SECONDS: "${UCE_GATE_TOKEN_TTL_SECONDS:-900}"
+
+      NEO4J_TELEMETRY: "${NEO4J_TELEMETRY:-false}"
 
       LLM_PROVIDER: "${LLM_PROVIDER:-anthropic}"
       LLM_FALLBACK: "${LLM_FALLBACK:-anthropic}"

@@ -79,6 +79,50 @@ Generated benchmark architecture figure:
 - JWT-backed RBAC gate with deny-by-default support.
 - Full local stack via Docker Compose (Neo4j + Keycloak + Neo4j-MCP + UCE MCP).
 
+## Data Privacy: Self-Hosted, Local-First by Default
+
+UCE is distributed for you to run — there is no multi-tenant hosted service that ingests your
+code. `pip install uce-engine` or `docker pull`/`docker compose up` all stand up a private
+instance on your own machine or infrastructure; your source code, schema, requirements, and
+policies never leave that instance unless you explicitly configure a remote LLM provider.
+
+**What stays local, always:**
+
+- Code parsing, schema parsing, the Neo4j knowledge graph, and every deterministic reasoning
+  tool (`impact_analysis`, `propose_change`, `explain_violation`, `authorize_change`, RBAC
+  evaluation) — none of this makes a network call to anywhere outside your own Neo4j instance.
+  This is the entire enforcement path: the gate that decides allow/warn/block never talks to an
+  LLM or any third party.
+- RBAC tokens are validated against your own self-hosted Keycloak; nothing is sent to Anthropic,
+  OpenAI, or anyone else for authorization decisions.
+- UCE has no telemetry, analytics, or usage reporting of its own. (The optional Neo4j-MCP sidecar
+  used only by the LLM-assisted ingestion lane has its own `NEO4J_TELEMETRY` setting, which the
+  shipped Docker Compose profile sets to `false` by default.)
+
+**What is opt-in and remote, clearly scoped:**
+
+- LLM-assisted ingestion (extracting structure from underspecified requirement/policy documents)
+  is the only feature that sends text to a third party, and only the document text you point it
+  at — never your source code, never graph data. It runs only when you explicitly call the LLM
+  ingestion path, and only for the provider you configure.
+- For a fully local, zero-outbound-network setup — including the LLM-assisted ingestion lane —
+  point it at a local model server (e.g. [Ollama](https://ollama.com)) instead of a hosted API:
+
+  ```env
+  LLM_PROVIDER=local
+  LLM_FALLBACK=local
+  LOCAL_LLM_BASE_URL=http://127.0.0.1:11434/v1
+  LOCAL_LLM_MODEL=llama3
+  # leave ANTHROPIC_API_KEY / OPENAI_API_KEY unset
+  ```
+
+  With this profile, `docker compose ... up` requires no outbound internet access at all after
+  the images are pulled once.
+
+**The only hosted thing UCE ships**, if you try the interactive demo linked in this repo, is a
+static walkthrough built from already-public, already-committed evaluation data — it never
+accepts or processes anyone's private repository.
+
 ## Results Snapshot (From Stored Artifacts)
 
 Using the corrected real no-tool baseline (`llama3:instruct`) versus MCP-UCE graph run:
@@ -107,7 +151,8 @@ copy docker\configs\client.env.example docker\configs\client.env
 ```
 
 Then edit `docker/configs/client.env` and set `UCE_TARGET_REPO` to the project you
-want UCE to analyze, plus your `ANTHROPIC_API_KEY` (or another LLM provider).
+want UCE to analyze, plus your `ANTHROPIC_API_KEY` (or another LLM provider). For a fully
+local, zero-outbound-network setup instead, see "Data Privacy" below.
 
 ### Step 2: Bring up the full stack
 
@@ -323,6 +368,10 @@ This includes deterministic benchmark reruns, real baseline reruns, and final re
 - Keep `.env`, `.env.docker`, and `.keycloak-secrets.env` out of git.
 - Keep Neo4j-MCP backend-only; expose UCE MCP to clients.
 - Use deny-by-default RBAC in production-like environments.
+- Keep `UCE_GATE_ENFORCEMENT=enforced` (the default) in any shared deployment; `advisory` is a
+  local-dev-only opt-out that lets `write_file`/`delete_file` run without a `gate_token`.
+- See "Data Privacy: Self-Hosted, Local-First by Default" above for what does and does not leave
+  your machine.
 
 ## License
 
