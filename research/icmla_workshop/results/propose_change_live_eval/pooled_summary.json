@@ -1,0 +1,14 @@
+{
+  "n_scenarios": 114,
+  "catch_rate": 1.0,
+  "false_gate_rate": 0.0,
+  "mean_missed_files": 43.89,
+  "repos": [
+    "talkai",
+    "melodi",
+    "expenses",
+    "spark"
+  ],
+  "tool": "uce.server.mcp_server.propose_change (live, real MCP tool)",
+  "note": "Replays the same captured Claude Sonnet 4.5 responses used for ENFORCEMENT_RESULTS.md through the shipped tool instead of inline research logic."
+}

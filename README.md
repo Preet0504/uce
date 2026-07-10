@@ -123,23 +123,61 @@ policies never leave that instance unless you explicitly configure a remote LLM 
 static walkthrough built from already-public, already-committed evaluation data — it never
 accepts or processes anyone's private repository.
 
-## Results Snapshot (From Stored Artifacts)
+## Results Snapshot (Real Repos, Independent Oracle, Live Tool)
 
-Using the corrected real no-tool baseline (`llama3:instruct`) versus MCP-UCE graph run:
+These numbers come from `research/icmla_workshop/`, evaluated against **4 real external
+repositories** (talkai, melodi, expenses, spark — 3 different DB stacks: Postgres/Drizzle,
+SQLite/Drizzle, and Supabase raw SQL) using ground truth from an **independent oracle** (a
+from-scratch import-graph resolver and governance-doc parser that does not reuse UCE's own
+Cypher queries — see `research/icmla_workshop/independent_oracle.py`), not a benchmark whose
+oracle partially reused UCE's own code.
+
+**The gate, live**: replaying the same captured Claude Sonnet 4.5 agent responses through the
+actual shipped `propose_change` MCP tool (not research-script logic) — 114 real destructive-change
+scenarios across the 4 repos:
+
+- Gate catch rate: **100%** (114/114 — every scenario where the agent's declared plan was
+  incomplete or violated policy was caught)
+- Mean files missed by the agent per scenario, caught by the gate: **43.9** (median 55) — matches
+  the original research capture to within rounding on every repo
+- Agent self-catch rate (no gate needed): **7–8%** — in over 9 of 10 cases an agent acting alone
+  would have executed an incomplete or governance-violating change without knowing it
+- False-gate rate: **0%** (0/114) in the live-tool replay — see `LIVE_TOOL_VALIDATION.md` for the
+  one-scenario discrepancy against the original 0.9% and why it's explained by independent-oracle
+  drift, not a tool defect
+
+**Impact prediction** (macro-averaged across the same 4 repos): file recall **0.98** — UCE
+recovers essentially all of the true blast radius, matching a dedicated static-analysis tool
+(madge) on recall while additionally providing requirement/policy traceability that static tools
+cannot.
+
+**RBAC**: deterministic **0% breach rate by construction**, versus Claude Sonnet 4.5's 4.9% breach
+rate on a hard policy with precedence conflicts and path-specificity traps (`RBAC_HARD_001`,
+99 probes) — the finding is not "LLMs can't do RBAC," it's that LLM policy compliance is
+model/complexity-dependent and unguaranteed, while UCE's `evaluate_rules()` is invariant.
+
+Methodology and full results:
+
+- `research/icmla_workshop/LIVE_TOOL_VALIDATION.md` — the live `propose_change` tool replay above
+- `research/icmla_workshop/ENFORCEMENT_RESULTS.md` — the original enforcement-gate study
+- `research/icmla_workshop/FINDINGS.md` — full methodology, ablations, significance tests, and
+  the context-augmentation ladder (why pasting docs into the prompt doesn't substitute for tools)
+- `research/icmla_workshop/EVALUATION.md` — which script measures what, and how to reproduce
+
+<details>
+<summary>Earlier, single-domain benchmark (superseded by the above)</summary>
+
+An earlier benchmark (`research/supplemental_benchmarks/`) evaluated a single synthetic domain
+with an oracle that partially reused UCE's own Cypher queries — its numbers are not independent
+validation. Kept for history:
 
 - Requirement caught-any rate: `0.550` (no-tool) vs `0.773` (MCP-UCE)
 - Policy caught-any rate: `0.368` (no-tool) vs `0.714` (MCP-UCE)
 - RBAC breach rate on oracle-denied probes: `0.647` (no-tool) vs `0.000` (MCP-UCE)
 
-Result visuals:
+Detailed baseline explanation: `research/supplemental_benchmarks/results/real_llm_baseline/README.md`
 
-![Requirement and Policy Capture](research/supplemental_benchmarks/results/figures/real_llm_requirement_policy_violation.png)
-
-![RBAC Breach Rate](research/supplemental_benchmarks/results/figures/real_llm_rbac_breach_rate.png)
-
-Detailed baseline explanation:
-
-- `research/supplemental_benchmarks/results/real_llm_baseline/README.md`
+</details>
 
 ## Quick Start (Spoon-Fed Path)
 

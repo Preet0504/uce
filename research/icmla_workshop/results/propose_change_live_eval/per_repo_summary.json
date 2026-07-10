@@ -1,0 +1,38 @@
+[
+  {
+    "repo": "talkai",
+    "n_scenarios": 24,
+    "catch_rate": 1.0,
+    "false_gate_rate": 0.0,
+    "mean_missed_files": 64.5,
+    "has_rbac": true,
+    "rbac_denies_seen": 14
+  },
+  {
+    "repo": "melodi",
+    "n_scenarios": 33,
+    "catch_rate": 1.0,
+    "false_gate_rate": 0.0,
+    "mean_missed_files": 19.79,
+    "has_rbac": false,
+    "rbac_denies_seen": 0
+  },
+  {
+    "repo": "expenses",
+    "n_scenarios": 9,
+    "catch_rate": 1.0,
+    "false_gate_rate": 0.0,
+    "mean_missed_files": 3.44,
+    "has_rbac": false,
+    "rbac_denies_seen": 0
+  },
+  {
+    "repo": "spark",
+    "n_scenarios": 48,
+    "catch_rate": 1.0,
+    "false_gate_rate": 0.0,
+    "mean_missed_files": 57.75,
+    "has_rbac": false,
+    "rbac_denies_seen": 0
+  }
+]
