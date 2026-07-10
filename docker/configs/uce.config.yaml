@@ -40,6 +40,12 @@ ignore:
   - node_modules
   - venv
   - .venv
+  - .venv-release
+  - env
+  - .tox
+  - .pytest_cache
+  - .mypy_cache
+  - .ruff_cache
   - dist
   - build
   - coverage

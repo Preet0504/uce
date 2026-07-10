@@ -34,5 +34,6 @@ client_runner/runtime/
 *.tmp
 *.bak
 ~$*.docx
+demo/.gate_demo_scratch.txt
 
 .DS_Store
