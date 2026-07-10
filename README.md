@@ -38,11 +38,15 @@ Supplemental benchmark artifacts:
 - RBAC authority rules
 
 2. Expose graph-backed MCP tools:
+- `propose_change` — the gate: agent declares files/requirements, UCE checks it against the
+  real blast radius, governance, and RBAC, and returns allow/warn/block plus a `gate_token`
 - impact/risk/explain tools
 - introspection tools
 - authorization + gated write/delete tools
 
-3. Enforce RBAC at mutation time:
+3. Enforce the gate at mutation time — not just advisory:
+- `write_file`/`delete_file` require a `gate_token` minted only by a successful `propose_change`
+  call; there is no code path to a filesystem mutation that skips the gate
 - viewer/editor/admin token claims
 - deny-by-default mode support
 - path-specific allow/deny logic
@@ -63,11 +67,16 @@ Generated benchmark architecture figure:
 
 ## Core Capabilities
 
+- **`propose_change` gate**: deterministic allow/warn/block decision comparing a caller's
+  declared plan against the real import/call blast radius and RBAC — not optional advice.
+  `write_file`/`delete_file` require the `gate_token` it mints; they cannot execute without one.
+- **`explain_violation`**: literal requirement/policy document text plus exact trace chains —
+  zero LLM involvement, nothing paraphrased or summarized.
 - Deterministic graph ingestion for code/schema/governance artifacts.
 - Optional LLM-assisted extraction for underspecified docs.
-- Graph reasoning tools for impact, explainability, and preflight risk.
+- Graph reasoning tools for impact, explainability, and preflight risk (best-effort/exploratory —
+  see the tool catalog below for which tools are enforcement-grade vs. which guess from text).
 - JWT-backed RBAC gate with deny-by-default support.
-- Safe mutation tools (`write_file`, `delete_file`) behind authorization checks.
 - Full local stack via Docker Compose (Neo4j + Keycloak + Neo4j-MCP + UCE MCP).
 
 ## Results Snapshot (From Stored Artifacts)
@@ -227,9 +236,32 @@ RBAC_CLOCK_SKEW_SECONDS=60
 UCE_MCP_TRANSPORT=http
 ```
 
+Gate env defaults (the `propose_change` gate; `enforced` is already the default, shown here for
+clarity):
+
+```env
+UCE_GATE_ENFORCEMENT=enforced
+UCE_GATE_STRICT_DEFAULT=true
+UCE_GATE_TOKEN_TTL_SECONDS=900
+```
+
 ## MCP Tool Catalog
 
-Reasoning:
+**The gate (start here for agent enforcement):**
+
+- `propose_change` — the tool an agent MUST call before `write_file`/`delete_file`. Compares
+  a declared plan (files, requirements) against the graph's real blast radius and RBAC decision
+  and returns `allow` / `warn` / `block`. On `allow`, mints a `gate_token` — `write_file` and
+  `delete_file` will not execute without one. Entity input is structured (`entity_type`/
+  `entity_name`/`files_to_edit`); nothing here is guessed from free text.
+- `explain_violation` — the exact, fully deterministic evidence behind a violation: literal
+  requirement/policy document text (not a summary) plus the exact Cypher-derived trace chain.
+  No LLM involvement.
+- `ci_impact_report` — the changeset-level counterpart to `propose_change`, for CI/PR gating
+  across multiple files at once; returns a `verdict` and `missing_from_changeset`.
+
+Reasoning (best-effort, free-text entity detection — not authoritative; use `propose_change` for
+enforcement):
 
 - `impact_analysis`
 - `explain_change`
@@ -238,6 +270,8 @@ Reasoning:
 - `validate_change`
 - `preflight_validation`
 - `logic_trace`
+- `find_entity_candidates` — the recommended bridge from free text to `propose_change`'s
+  structured input.
 
 Graph introspection:
 
@@ -249,8 +283,9 @@ Graph introspection:
 Governance and mutation:
 
 - `authorize_change`
-- `write_file`
-- `delete_file`
+- `write_file` — requires a valid `gate_token` from `propose_change` unless
+  `UCE_GATE_ENFORCEMENT=advisory`.
+- `delete_file` — same `gate_token` requirement.
 
 ## Testing
 

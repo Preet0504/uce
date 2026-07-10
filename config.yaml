@@ -61,3 +61,12 @@ rbac:
   jwt_audience: uce-mcp
   jwks_uri: http://localhost:8080/realms/uce-realm/protocol/openid-connect/certs
   clock_skew_seconds: 60
+
+# The propose_change gate. "enforced" (default) means write_file/delete_file
+# refuse to run without a valid gate_token minted by a prior propose_change()
+# call that returned decision="allow" — the gate is not optional for callers.
+# "advisory" is a local-dev-only opt-out; never set it in a shared deployment.
+gate:
+  enforcement: enforced
+  strict_default: true
+  token_ttl_seconds: 900

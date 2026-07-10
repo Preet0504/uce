@@ -29,6 +29,13 @@ class RbacConfig:
 
 
 @dataclass(frozen=True)
+class GateConfig:
+    enforcement: str  # "enforced" | "advisory" — mirrors RbacConfig.enforce_mode naming
+    strict_default: bool
+    token_ttl_seconds: int
+
+
+@dataclass(frozen=True)
 class PathsConfig:
     code: tuple[str, ...]
     schema: tuple[str, ...]
@@ -48,6 +55,7 @@ class UceConfig:
     aliases: dict[str, str]
     neo4j: Neo4jConfig
     rbac: RbacConfig
+    gate: GateConfig
 
 
 def _as_tuple(value: Any) -> tuple[str, ...]:
@@ -158,6 +166,34 @@ def load_config(config_path: str, project_root_override: str | None = None) -> U
         clock_skew_seconds=clock_skew_seconds,
     )
 
+    gate_raw = raw.get("gate") or {}
+    env_gate_enforcement = os.getenv("UCE_GATE_ENFORCEMENT")
+    env_gate_strict_default = os.getenv("UCE_GATE_STRICT_DEFAULT")
+    env_gate_token_ttl = os.getenv("UCE_GATE_TOKEN_TTL_SECONDS")
+
+    gate_enforcement = str(
+        env_gate_enforcement or gate_raw.get("enforcement") or "enforced"
+    ).strip().lower()
+    if gate_enforcement not in {"enforced", "advisory"}:
+        gate_enforcement = "enforced"
+
+    try:
+        gate_token_ttl_seconds = int(
+            str(env_gate_token_ttl or gate_raw.get("token_ttl_seconds") or "900").strip()
+        )
+    except ValueError:
+        gate_token_ttl_seconds = 900
+    gate_token_ttl_seconds = max(gate_token_ttl_seconds, 1)
+
+    gate = GateConfig(
+        enforcement=gate_enforcement,
+        strict_default=_as_bool(
+            env_gate_strict_default if env_gate_strict_default is not None else gate_raw.get("strict_default"),
+            default=True,
+        ),
+        token_ttl_seconds=gate_token_ttl_seconds,
+    )
+
     return UceConfig(
         project_root=project_root,
         languages=languages,
@@ -166,6 +202,7 @@ def load_config(config_path: str, project_root_override: str | None = None) -> U
         aliases=aliases,
         neo4j=neo4j,
         rbac=rbac,
+        gate=gate,
     )
 
 
