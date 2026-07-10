@@ -1,4 +1,4 @@
-project_root: ../talkai-main/
+project_root: .
 
 languages:
   - python
@@ -11,16 +11,21 @@ languages:
 
 paths:
   code:
-    - src
+    - .
   schema:
+    - db
     - src/db
   requirements:
-    - src/requirements
+    - artifacts/requirements
   policies:
-    - src/policies
+    - artifacts/policies
   rbac:
-    - src/rbac
-  backend: []
+    - artifacts/rbac
+  backend:
+    - src
+    - server
+    - app
+  identifiers: []
 
 ignore:
   - .git
@@ -28,42 +33,31 @@ ignore:
   - __pycache__
   - node_modules
   - venv
+  - .venv
   - dist
   - build
   - coverage
   - .idea
   - .vscode
-  - ui
-  - views
-  - public
-  - assets
-  - styles
-  - css
-  - scss
-  - .env
   - .DS_Store
   - "*.log"
   - "*.tmp"
   - "*.bak"
-  - "*.swp"
-  - "*.swo"
-  - "*.pyc"
-  - "*.class"
-  - "*.o"
-  - "*.so"
-  - "*.dll"
-  - "*.exe"
-  - "*.dylib"
-  - "*.zip"
-  - "*.tar"
-  - "*.gz"
-  - "*.7z"
-  - "*.rar"
 
-aliases:
-  "@/": src/
+aliases: {}
 
 neo4j:
   uri: bolt://localhost:7687
   user: neo4j
   password: testpassword
+
+# RBAC is disabled by default for local development.
+# Set enabled: true and configure JWT settings when using Keycloak.
+rbac:
+  enabled: false
+  enforce_mode: advisory
+  deny_default: true
+  jwt_issuer: http://localhost:8080/realms/uce-realm
+  jwt_audience: uce-mcp
+  jwks_uri: http://localhost:8080/realms/uce-realm/protocol/openid-connect/certs
+  clock_skew_seconds: 60

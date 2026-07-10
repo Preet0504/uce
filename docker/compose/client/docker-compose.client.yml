@@ -1,0 +1,179 @@
+services:
+  neo4j:
+    image: neo4j:5.26
+    container_name: uce-client-neo4j
+    restart: unless-stopped
+    ports:
+      - "${NEO4J_BOLT_PORT:-7687}:7687"
+      - "${NEO4J_HTTP_PORT:-7474}:7474"
+    environment:
+      NEO4J_AUTH: "${NEO4J_USER:-neo4j}/${NEO4J_PASSWORD:-testpassword}"
+      NEO4J_PLUGINS: '["apoc"]'
+      NEO4J_dbms_security_procedures_unrestricted: "apoc.*"
+      NEO4J_dbms_security_procedures_allowlist: "apoc.*"
+    volumes:
+      - neo4j_data:/data
+      - neo4j_logs:/logs
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "cypher-shell -a bolt://localhost:7687 -u ${NEO4J_USER:-neo4j} -p ${NEO4J_PASSWORD:-testpassword} 'RETURN 1;' || exit 1"
+        ]
+      interval: 10s
+      timeout: 10s
+      retries: 30
+      start_period: 20s
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0.8
+    container_name: uce-client-keycloak
+    restart: unless-stopped
+    command: ["start-dev"]
+    ports:
+      - "${KEYCLOAK_PORT:-8080}:8080"
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: "${KEYCLOAK_ADMIN:-admin}"
+      KC_BOOTSTRAP_ADMIN_PASSWORD: "${KEYCLOAK_ADMIN_PASSWORD:-admin}"
+      KC_HOSTNAME_STRICT: "false"
+      KC_HTTP_ENABLED: "true"
+    volumes:
+      - keycloak_data:/opt/keycloak/data
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'echo > /dev/tcp/127.0.0.1/8080'"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+
+  keycloak-bootstrap:
+    image: "${UCE_IMAGE:-uce-engine:client}"
+    container_name: uce-client-keycloak-bootstrap
+    restart: "no"
+    command:
+      [
+        "python",
+        "/app/scripts/bootstrap_keycloak.py",
+        "--base-url",
+        "http://keycloak:8080",
+        "--public-base-url",
+        "http://localhost:${KEYCLOAK_PORT:-8080}",
+        "--admin-username",
+        "${KEYCLOAK_ADMIN:-admin}",
+        "--admin-password",
+        "${KEYCLOAK_ADMIN_PASSWORD:-admin}",
+        "--realm",
+        "${KEYCLOAK_REALM:-uce-realm}",
+        "--audience",
+        "${RBAC_JWT_AUDIENCE:-uce-mcp}",
+        "--access-token-lifespan-seconds",
+        "${KEYCLOAK_ACCESS_TOKEN_LIFESPAN_SECONDS:-3600}",
+        "--output-env-file",
+        "/workspace/client/.keycloak-secrets.env"
+      ]
+    depends_on:
+      keycloak:
+        condition: service_healthy
+    volumes:
+      - ../../runtime:/workspace/client
+
+  neo4j-mcp:
+    image: "${UCE_IMAGE:-uce-engine:client}"
+    container_name: uce-client-neo4j-mcp
+    restart: unless-stopped
+    command:
+      [
+        "neo4j-mcp",
+        "--transport",
+        "http",
+        "--server-host",
+        "0.0.0.0",
+        "--server-port",
+        "8000",
+        "--server-path",
+        "/mcp/",
+        "--db-url",
+        "bolt://neo4j:7687",
+        "--username",
+        "${NEO4J_USER:-neo4j}",
+        "--password",
+        "${NEO4J_PASSWORD:-testpassword}",
+        "--database",
+        "${NEO4J_DATABASE:-neo4j}"
+      ]
+    depends_on:
+      neo4j:
+        condition: service_healthy
+    ports:
+      - "${NEO4J_MCP_PORT:-8000}:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1', 8000), 2); s.close()"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 10s
+
+  uce:
+    image: "${UCE_IMAGE:-uce-engine:client}"
+    container_name: uce-client-engine
+    restart: unless-stopped
+    command: ["uce", "--config", "/workspace/config.yaml"]
+    depends_on:
+      neo4j:
+        condition: service_healthy
+      neo4j-mcp:
+        condition: service_healthy
+      keycloak-bootstrap:
+        condition: service_completed_successfully
+    environment:
+      NEO4J_URI: "bolt://neo4j:7687"
+      NEO4J_USER: "${NEO4J_USER:-neo4j}"
+      NEO4J_USERNAME: "${NEO4J_USER:-neo4j}"
+      NEO4J_PASSWORD: "${NEO4J_PASSWORD:-testpassword}"
+      NEO4J_DATABASE: "${NEO4J_DATABASE:-neo4j}"
+      NEO4J_TRANSPORT_MODE: "http"
+      NEO4J_MCP_HTTP_URL: "http://neo4j-mcp:8000/mcp/"
+      NEO4J_MCP_HTTP_HOST_HEADER: "${NEO4J_MCP_HTTP_HOST_HEADER:-127.0.0.1}"
+
+      UCE_MCP_TRANSPORT: "http"
+      UCE_MCP_SERVER_HOST: "0.0.0.0"
+      UCE_MCP_SERVER_PORT: "9001"
+      UCE_MCP_SERVER_PATH: "/mcp/"
+
+      RBAC_ENABLED: "${RBAC_ENABLED:-true}"
+      RBAC_ENFORCE_MODE: "${RBAC_ENFORCE_MODE:-enforced}"
+      RBAC_DENY_DEFAULT: "${RBAC_DENY_DEFAULT:-true}"
+      RBAC_JWT_ISSUER: "${RBAC_JWT_ISSUER:-http://localhost:${KEYCLOAK_PORT:-8080}/realms/${KEYCLOAK_REALM:-uce-realm}}"
+      RBAC_JWT_AUDIENCE: "${RBAC_JWT_AUDIENCE:-uce-mcp}"
+      RBAC_JWKS_URI: "${RBAC_JWKS_URI:-http://keycloak:8080/realms/${KEYCLOAK_REALM:-uce-realm}/protocol/openid-connect/certs}"
+      RBAC_CLOCK_SKEW_SECONDS: "${RBAC_CLOCK_SKEW_SECONDS:-60}"
+
+      LLM_PROVIDER: "${LLM_PROVIDER:-anthropic}"
+      LLM_FALLBACK: "${LLM_FALLBACK:-anthropic}"
+      ANTHROPIC_API_KEY: "${ANTHROPIC_API_KEY:-}"
+      ANTHROPIC_MODEL: "${ANTHROPIC_MODEL:-claude-sonnet-4-5}"
+      OPENAI_API_KEY: "${OPENAI_API_KEY:-}"
+      OPENAI_MODEL: "${OPENAI_MODEL:-gpt-4o-mini}"
+      LOCAL_LLM_BASE_URL: "${LOCAL_LLM_BASE_URL:-}"
+      LOCAL_LLM_API_KEY: "${LOCAL_LLM_API_KEY:-}"
+      LOCAL_LLM_MODEL: "${LOCAL_LLM_MODEL:-}"
+      LLM_MAX_TOKENS: "${LLM_MAX_TOKENS:-2048}"
+      LLM_FORCE_JSON_RESPONSE: "${LLM_FORCE_JSON_RESPONSE:-true}"
+      LLM_REQUIRE_EVIDENCE: "${LLM_REQUIRE_EVIDENCE:-false}"
+      LLM_EVIDENCE_STRICT: "${LLM_EVIDENCE_STRICT:-false}"
+    ports:
+      - "${UCE_MCP_PORT:-9001}:9001"
+    volumes:
+      - ../../configs/uce.config.yaml:/workspace/config.yaml:ro
+      - ${UCE_TARGET_REPO:?Set UCE_TARGET_REPO in client.env}:/workspace/target:ro
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1', 9001), 2); s.close()"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+
+volumes:
+  neo4j_data:
+  neo4j_logs:
+  keycloak_data:

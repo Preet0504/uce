@@ -13,18 +13,18 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from matplotlib.patches import FancyArrowPatch, FancyBboxPatch
 
-from core.config import UceConfig, load_config
-from core.graph_db import GraphDB
-from core.rbac import ROLE_RANKS, AuthorityRule, evaluate_rules, rule_from_row
-from core.risk_model import assess_risk
-from ingestion.graph_builder import (
+from uce.core.config import UceConfig, load_config
+from uce.core.graph_db import GraphDB
+from uce.core.rbac import ROLE_RANKS, AuthorityRule, evaluate_rules, rule_from_row
+from uce.core.risk_model import assess_risk
+from uce.ingestion.graph_builder import (
     is_ignored,
     load_columns,
     load_tables,
     upsert_policies,
     upsert_requirements,
 )
-from reasoning import impact_analysis as impact_module
+from uce.reasoning import impact_analysis as impact_module
 
 
 BASE_DIR = Path(__file__).resolve().parent

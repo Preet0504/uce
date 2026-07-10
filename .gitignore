@@ -16,10 +16,17 @@ build/
 !.env.example
 !.env.docker.example
 .keycloak-secrets.env
+docker/configs/client.env
+
+.vscode/
 
 docker-data/
 neo4j-mcp.zip
 Outline_20of_20final_20report.pdf
+*.tar
+*.tar.gz
+client_runner/client.env
+client_runner/runtime/
 
 *.log
 *.out.log

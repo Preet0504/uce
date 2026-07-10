@@ -1,8 +1,8 @@
-import run as uce_run
+from uce.cli import main as _uce_main
 
 
 def main() -> None:
-    return uce_run.main()
+    _uce_main()
 
 
 if __name__ == "__main__":

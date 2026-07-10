@@ -17,11 +17,11 @@ ROOT_DIR = Path(__file__).resolve().parents[2]
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
-from core.config import UceConfig, load_config
-from core.rbac import ROLE_RANKS, AuthorityRule, evaluate_rules
-from ingestion.code_parser import detect_language, parse_file
-from ingestion.graph_builder import is_ignored, resolve_import
-from ingestion.schema_parser import parse_schema_file
+from uce.core.config import UceConfig, load_config
+from uce.core.rbac import ROLE_RANKS, AuthorityRule, evaluate_rules
+from uce.ingestion.code_parser import detect_language, parse_file
+from uce.ingestion.graph_builder import is_ignored, resolve_import
+from uce.ingestion.schema_parser import parse_schema_file
 
 
 BASE_DIR = Path(__file__).resolve().parent

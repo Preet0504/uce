@@ -309,26 +309,81 @@ def add_approach(doc: Document) -> None:
     doc.add_heading("A. The strategy you followed", level=2)
     para(
         doc,
-        "The main strategy was to make context explicit, structured, and queryable before asking an LLM to reason about it. A common failure mode in LLM-based development tools is that they rely on long prompts containing fragments of source code and rules. This is fragile because the model may ignore a rule, over-focus on a keyword, or fail to combine two distant facts. UCE instead builds a graph where important software and governance entities are represented as nodes, and evidence-backed relationships are represented as edges.",
+        "The strategy I followed was to separate two responsibilities that are often mixed together in AI developer tooling: language generation and governance reasoning. In many assistant workflows, an LLM is asked to both understand free-form engineering requests and to enforce requirements, policies, and authorization constraints. That combination is risky. Language models are excellent at synthesis, but they are not deterministic policy engines. So the first strategic decision in UCE was architectural: the model can explain and interact, but a deterministic context engine must own impact analysis and governance-critical decisions.",
     )
     para(
         doc,
-        "The UCE strategy has five parts. First, parse the codebase and schema into deterministic graph nodes. Second, ingest requirements and policies as first-class governance artifacts. Third, connect files to schema objects and requirements to schema objects so impact analysis can move from a code or schema change to the requirements it may violate. Fourth, expose reasoning through MCP tools, not direct graph access. Fifth, enforce RBAC on mutation tools so users cannot bypass governance by writing directly to protected policy or requirement paths.",
+        "This decision directly shaped how context is represented. Instead of relying on long prompts that include partial code snippets and prose rules, UCE builds a graph where software entities and governance entities are first-class nodes. Files, functions, tables, columns, requirements, policies, roles, and authority rules are connected through typed edges. This means the system can answer governance questions through explicit traversals rather than through model guesswork. If a user asks about changing a column, the system does not rely on the model remembering which requirement might mention it; it follows graph links with deterministic queries.",
     )
+    para(
+        doc,
+        "A second strategic choice was to emphasize deterministic ingestion first, then optionally layer LLM-assisted extraction. Deterministic parsing gives strong reproducibility for code and schema, while governance documents can still be interpreted in a structured way. Optional LLM extraction exists for underspecified documents, but the baseline architecture does not depend on LLM extraction quality to preserve core safety properties. This was important for two reasons: first, reproducibility in an academic setting; second, operational reliability in environments where model behavior may vary across runs.",
+    )
+    para(
+        doc,
+        "A third choice was to treat governance artifacts as implementation inputs rather than documentation side-notes. In many projects, requirements and policies exist as markdown files that are read by humans but not connected to the runtime decision process. UCE explicitly ingests those artifacts and links them to technical entities. The effect is practical: an impact result can include implicated requirement IDs and enforced policy IDs, creating a chain of evidence from proposed code change to governance risk.",
+    )
+    para(
+        doc,
+        "A fourth strategic choice was to enforce a strict MCP boundary. The assistant should call UCE MCP tools, not raw graph endpoints. This boundary is not merely an integration preference; it is a security control. If an assistant can directly mutate a backend system, it can bypass policy checks even if the prompt says it should not. By funneling mutations through guarded tools, UCE ensures authorization checks happen at execution time, not only at suggestion time.",
+    )
+    para(
+        doc,
+        "A fifth choice was to evaluate the system with safety metrics, not only relevance metrics. Typical AI evaluations emphasize helpfulness, BLEU-like text overlap, or subjective quality. Those are insufficient for governance-heavy software engineering. UCE therefore evaluates requirement capture, policy capture, and RBAC breach behavior in addition to overlap-based impact quality. This aligns the evaluation with the stated objective: safer organization-bound engineering assistance.",
+    )
+    para(
+        doc,
+        "In implementation terms, the strategy can be viewed as a layered control plane over software change reasoning. The ingestion layer builds structured state. The reasoning layer answers impact and risk queries from that state. The authorization layer evaluates whether a change may proceed for a specific role and path. The tool exposure layer presents these capabilities through a stable MCP interface. Each layer has a narrow contract, which reduced coupling and made the system easier to debug and evaluate.",
+    )
+    para(
+        doc,
+        "I also intentionally selected scenario types that reflect real developer work: table changes, column changes, and file-level refactors. These are common operations that require cross-domain reasoning because schema and code dependencies are rarely isolated. This scenario design forced the system to prove it could combine multiple contexts instead of succeeding on single-document retrieval.",
+    )
+    para(
+        doc,
+        "Finally, I treated auditability as a functional requirement, not a bonus. Every major design element in UCE was chosen to preserve traceability: deterministic links, explicit IDs, typed relationships, and explainable rule decisions. If an output says a path is denied, the decision should be attributable to a rule and role relation, not to an opaque model confidence score. This was central to the strategy because enterprise adoption depends on post-hoc explainability to technical and non-technical stakeholders.",
+    )
+    doc.add_heading("Strategy Summary (Operational Steps)", level=3)
     numbered(doc, "Ingest code, schema, requirements, policies, and RBAC documents into a deterministic graph.")
     numbered(doc, "Expose graph-backed reasoning tools through UCE MCP.")
     numbered(doc, "Prevent direct Neo4j-MCP access from acting as an authorization bypass.")
     numbered(doc, "Evaluate a no-tool local LLM baseline against MCP-UCE using exact IDs and RBAC probes.")
     numbered(doc, "Use results to measure not only relevance, but policy/requirement capture and RBAC safety.")
+    numbered(doc, "Preserve evidence paths so each high-impact or denied decision can be explained and audited.")
+    numbered(doc, "Keep local-first execution and data boundaries to align with private engineering environments.")
 
     doc.add_heading("B. Motivation for your strategy", level=2)
     para(
         doc,
-        "The motivation was that policy and requirement compliance needs stronger guarantees than a prompt can provide. A model can be told to follow rules, but if those rules are embedded as prose inside a long prompt, the system has no durable record of why a decision was made. A graph provides inspectability. If UCE reports that a change to `meetings.created_at` implicates `RQ-001` and `P-001`, that result can be traced through schema, requirement, and policy relationships. If an editor attempts to modify `src/rbac/*.md`, RBAC rules can deny the operation before any LLM-generated text touches the filesystem.",
+        "The primary motivation was that policy and requirement compliance needs guarantees stronger than prompt compliance. Prompt instructions are soft constraints; they can be ignored, misinterpreted, or outweighed by other tokens in the model context window. In contrast, software governance requires hard constraints. If a path is protected by policy, a denied role should be blocked every time, regardless of prompt wording. This difference between soft linguistic guidance and hard execution controls motivated the entire UCE architecture.",
     )
     para(
         doc,
-        "The strategy was also motivated by privacy. The original proposal argued that private code and internal artifacts should not leave the organization. The final implementation keeps that assumption and evaluates with a local small LLM, `llama3:instruct`. This is not intended to beat the largest hosted models in open-ended language ability. Instead, the research question is whether a local model plus a deterministic MCP context engine can perform safer organization-bound software reasoning than a local model alone.",
+        "A related motivation was operational trust. Teams need to justify why a proposed change is considered risky, why a requirement is implicated, or why an operation is denied. Without structured evidence, AI outputs become difficult to defend in code review, compliance review, or incident retrospectives. The graph approach addresses this by producing inspectable links among code entities and governance entities. A report that includes `RQ-001` and `P-001` is no longer a vague warning; it is a traceable claim anchored to known artifacts.",
+    )
+    para(
+        doc,
+        "Privacy was also a first-order motivation from the beginning of the project. The original proposal emphasized on-premise or organization-bound operation so proprietary code, schema, and internal policy documents are not routinely sent to external services. That motivation remained intact in the final implementation. The benchmark includes a local small model (`llama3:instruct`) not because it is universally best at language tasks, but because it reflects the practical deployment constraints of privacy-sensitive and resource-constrained teams.",
+    )
+    para(
+        doc,
+        "Another motivation was reproducibility. If two identical inputs can produce materially different governance decisions, the system becomes difficult to validate and difficult to improve. Deterministic components provide a stable baseline for debugging and comparison. By fixing graph relationships and rule evaluation logic, experimental differences become easier to attribute. This was particularly important in the course context, where the project had to show not only implementation novelty but also credible empirical methodology.",
+    )
+    para(
+        doc,
+        "The strategy was also motivated by the limitations of flat retrieval in connected software systems. Source code dependencies, database schema constraints, and policy mappings form a relational network, not independent text chunks. A change in one location can trigger transitive effects through imports, function calls, schema references, and requirement links. Graph representation is better suited to this structure because it makes multi-hop dependencies explicit and computable.",
+    )
+    para(
+        doc,
+        "Security and least-privilege concerns provided additional motivation. In practical assistant deployments, the dangerous failure mode is not merely an incorrect explanation; it is an unauthorized action that actually executes. UCE therefore treats mutation authorization as a runtime gate. Even if an LLM suggests an edit confidently, the operation still passes through role- and path-aware rule checks. This shifts safety from advisory warnings to enforceable controls.",
+    )
+    para(
+        doc,
+        "A final motivation was to produce results that are meaningful to engineering leadership and governance stakeholders, not only to ML practitioners. Metrics such as requirement caught-any rate, policy caught-any rate, and RBAC breach rate directly communicate whether an assistant supports compliant engineering behavior. These metrics are easier to interpret in organizational settings than generic language quality measures. The approach therefore aligns technical architecture, evaluation design, and stakeholder communication around the same governance objective.",
+    )
+    para(
+        doc,
+        "In summary, the motivation can be expressed as a simple principle: use LLMs for language and interaction, but use deterministic systems for policy-critical decisions. UCE operationalizes that principle with graph-based context, MCP-mediated access, and enforced RBAC at mutation boundaries. The resulting system is intentionally conservative where safety matters and flexible where conversational productivity matters.",
     )
 
     doc.add_heading("C. How you divided the work among team members", level=2)

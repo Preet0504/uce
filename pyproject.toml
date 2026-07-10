@@ -8,11 +8,10 @@ version = "0.2.1"
 description = "Unified Context Engine"
 readme = {file = "README.md", content-type = "text/markdown"}
 requires-python = ">=3.10,<3.13"
-license = {text = "MIT"}
+license = "MIT"
 authors = [{name = "UCE Contributors"}]
 classifiers = [
   "Programming Language :: Python :: 3",
-  "License :: OSI Approved :: MIT License",
 ]
 dependencies = [
   "neo4j>=5.14.0",
@@ -29,16 +28,24 @@ dependencies = [
   "tiktoken>=0.5.0",
 ]
 
-[project.scripts]
-uce = "run:main"
-neo4j-mcp = "neo4j_mcp.server:cli"
+[project.optional-dependencies]
+pdf = ["pypdf>=3.0.0"]
+doc = ["textract>=1.6.0"]
+all = ["uce_engine[pdf,doc]"]
 
-[tool.setuptools.packages.find]
-include = ["core*", "ingestion*", "runtime*", "server*", "reasoning*", "neo4j_mcp*"]
+[project.scripts]
+uce = "uce.cli:main"
+neo4j-mcp = "uce.neo4j_mcp.server:cli"
 
 [tool.setuptools]
+packages = [
+  "uce",
+  "uce.core",
+  "uce.ingestion",
+  "uce.neo4j_mcp",
+  "uce.reasoning",
+  "uce.runtime",
+  "uce.server",
+]
 include-package-data = true
-py-modules = ["run", "run_uce"]
-
-[tool.setuptools.package-data]
-core = [".env.example"]
+py-modules = ["run_uce"]

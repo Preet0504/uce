@@ -1,7 +1,5 @@
-﻿#!/usr/bin/env python3
+#!/usr/bin/env python3
 """Bootstrap Keycloak realm, RBAC clients, and client secrets for UCE."""
-
-from __future__ import annotations
 
 import argparse
 import json

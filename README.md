@@ -93,14 +93,20 @@ Detailed baseline explanation:
 ### Step 1: Prepare env file
 
 ```bash
-copy .env.docker.example .env.docker
-# Linux/macOS: cp .env.docker.example .env.docker
+copy docker\configs\client.env.example docker\configs\client.env
+# Linux/macOS: cp docker/configs/client.env.example docker/configs/client.env
 ```
+
+Then edit `docker/configs/client.env` and set `UCE_TARGET_REPO` to the project you
+want UCE to analyze, plus your `ANTHROPIC_API_KEY` (or another LLM provider).
 
 ### Step 2: Bring up the full stack
 
 ```bash
-docker compose --env-file .env.docker up -d --build
+docker compose \
+  -f docker/compose/client/docker-compose.client.yml \
+  --env-file docker/configs/client.env \
+  up -d --build
 ```
 
 Expected services:
@@ -249,7 +255,7 @@ Governance and mutation:
 ## Testing
 
 ```bash
-python -m unittest discover -s tests -p "test_*.py"
+pytest tests/
 ```
 
 ## Regenerate Benchmarks and Final Report
@@ -268,14 +274,13 @@ This includes deterministic benchmark reruns, real baseline reruns, and final re
 
 ## Documentation Map
 
-- `DOCUMENTATION.md`
-- `TUTORIAL.md`
-- `OPERATOR_RUNBOOK.md`
-- `RELEASE_CHECKLIST.md`
-- `TECHNICAL_REPORT.md`
-- `graph_schema.md`
-- `research/report_draft.md`
-- `research/final_report/CS540_Final_Project_Report_UCE_Preet_Patel.docx`
+- `docs/DOCUMENTATION.md`
+- `docs/TUTORIAL.md`
+- `docs/OPERATOR_RUNBOOK.md`
+- `docs/RELEASE_CHECKLIST.md`
+- `docs/TECHNICAL_REPORT.md`
+- `docs/graph_schema.md`
+- `research/final_report/CS540_Final_Project_Report_UCE_Preet_Patel_Final_Version.pdf`
 - `research/supplemental_benchmarks/README.md`
 
 ## Security Notes

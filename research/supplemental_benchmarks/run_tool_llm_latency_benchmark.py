@@ -17,8 +17,8 @@ RESULTS_DIR = BENCH_DIR / "results"
 REAL_DIR = RESULTS_DIR / "real_llm_baseline"
 TOOL_DIR = RESULTS_DIR / "tool_llm_latency"
 
-from core.config import load_config
-from ingestion.schema_parser import parse_schema_file
+from uce.core.config import load_config
+from uce.ingestion.schema_parser import parse_schema_file
 from run_real_llm_baseline import (
     ChatJsonClient,
     GraphlessOracle,
