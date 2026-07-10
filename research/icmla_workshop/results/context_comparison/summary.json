@@ -1,0 +1,68 @@
+{
+  "model": "claude-sonnet-4-5",
+  "impact_context_ladder": [
+    {
+      "system": "llm_bare",
+      "file_precision": 0.0274,
+      "file_recall": 0.0947,
+      "file_f1": 0.0425,
+      "requirement_f1": 0.2734,
+      "policy_f1": 0.3846
+    },
+    {
+      "system": "llm_+gov_docs",
+      "file_precision": 0.0345,
+      "file_recall": 0.0737,
+      "file_f1": 0.047,
+      "requirement_f1": 0.2764,
+      "policy_f1": 0.3793
+    },
+    {
+      "system": "llm_+inventory",
+      "file_precision": 0.3896,
+      "file_recall": 0.3158,
+      "file_f1": 0.3488,
+      "requirement_f1": 0.3273,
+      "policy_f1": 0.4528
+    },
+    {
+      "system": "llm_+rag_files",
+      "file_precision": 0.5753,
+      "file_recall": 0.4421,
+      "file_f1": 0.5,
+      "requirement_f1": 0.3273,
+      "policy_f1": 0.4528
+    },
+    {
+      "system": "uce_graph",
+      "file_precision": 0.2703,
+      "file_recall": 0.8421,
+      "file_f1": 0.4092,
+      "requirement_f1": 0.3871,
+      "policy_f1": 0.5484
+    }
+  ],
+  "rbac_context_ladder": [
+    {
+      "system": "llm_zero_shot",
+      "breach_rate": 0.0488,
+      "breach_count": 2,
+      "oracle_denied": 41,
+      "decision_accuracy": 0.9596
+    },
+    {
+      "system": "llm_few_shot",
+      "breach_rate": 0.0,
+      "breach_count": 0,
+      "oracle_denied": 41,
+      "decision_accuracy": 0.9091
+    },
+    {
+      "system": "uce_deterministic",
+      "breach_rate": 0.0,
+      "breach_count": 0,
+      "oracle_denied": 41,
+      "decision_accuracy": 1.0
+    }
+  ]
+}

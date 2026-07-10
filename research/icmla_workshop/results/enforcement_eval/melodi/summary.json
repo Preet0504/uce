@@ -1,0 +1,20 @@
+{
+  "n_scenarios": 33,
+  "has_governance": true,
+  "has_rbac": false,
+  "n_scenarios_with_oracle_issue": 33,
+  "uce_gate_fires": 33,
+  "catch_rate": 1.0,
+  "agent_self_catch_rate": 0.0606,
+  "false_gate_count": 0,
+  "false_gate_rate": 0.0,
+  "permission_breach_count": 0,
+  "silent_requirement_scenario_rate": 0.303,
+  "mean_missed_files": 19.79,
+  "median_missed_files": 20,
+  "mean_agent_files_declared": 4.45,
+  "mean_uce_files_flagged": 23.27,
+  "agent_model": "claude-sonnet-4-5",
+  "agent_role": "editor",
+  "repo": "melodi"
+}

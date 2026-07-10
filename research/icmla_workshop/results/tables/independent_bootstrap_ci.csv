@@ -1,0 +1,10 @@
+system,metric,f1,ci95_low,ci95_high
+naive_edit,file_f1,0.1008,0.0417,0.1724
+naive_edit,requirement_f1,0.0,0.0,0.0
+naive_edit,policy_f1,0.0,0.0,0.0
+lexical,file_f1,0.4352,0.2515,0.5735
+lexical,requirement_f1,0.3768,0.2957,0.4595
+lexical,policy_f1,0.4737,0.383,0.548
+uce,file_f1,0.4092,0.2506,0.5321
+uce,requirement_f1,0.3871,0.2478,0.5747
+uce,policy_f1,0.5484,0.3636,0.7419

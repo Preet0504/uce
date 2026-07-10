@@ -1,0 +1,46 @@
+{
+  "overall": [
+    {
+      "system": "naive_edit",
+      "n_scenarios": 24,
+      "file_precision": 0.25,
+      "file_recall": 0.06315789473684211,
+      "file_f1": 0.1008403361344538,
+      "requirement_precision": 0.0,
+      "requirement_recall": 0.0,
+      "requirement_f1": 0.0,
+      "policy_precision": 0.0,
+      "policy_recall": 0.0,
+      "policy_f1": 0.0,
+      "latency_ms_mean": 0.0010041665821821273
+    },
+    {
+      "system": "lexical",
+      "n_scenarios": 24,
+      "file_precision": 0.3884297520661157,
+      "file_recall": 0.49473684210526314,
+      "file_f1": 0.4351851851851852,
+      "requirement_precision": 0.4642857142857143,
+      "requirement_recall": 0.3170731707317073,
+      "requirement_f1": 0.3768115942028986,
+      "policy_precision": 0.46153846153846156,
+      "policy_recall": 0.4864864864864865,
+      "policy_f1": 0.47368421052631576,
+      "latency_ms_mean": 0.328612500197778
+    },
+    {
+      "system": "uce",
+      "n_scenarios": 24,
+      "file_precision": 0.2702702702702703,
+      "file_recall": 0.8421052631578947,
+      "file_f1": 0.40920716112531974,
+      "requirement_precision": 0.5714285714285714,
+      "requirement_recall": 0.2926829268292683,
+      "requirement_f1": 0.3870967741935484,
+      "policy_precision": 0.68,
+      "policy_recall": 0.4594594594594595,
+      "policy_f1": 0.5483870967741935,
+      "latency_ms_mean": 19.721883333507623
+    }
+  ]
+}

@@ -1,0 +1,4 @@
+variant,precision,recall,f1,tp,fp,fn
+direct,0.3514,0.2737,0.3077,26,48,69
++transitive,0.3276,1.0,0.4935,95,195,0
++callchain,0.3276,1.0,0.4935,95,195,0

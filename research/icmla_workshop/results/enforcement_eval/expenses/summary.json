@@ -1,0 +1,20 @@
+{
+  "n_scenarios": 9,
+  "has_governance": true,
+  "has_rbac": false,
+  "n_scenarios_with_oracle_issue": 9,
+  "uce_gate_fires": 9,
+  "catch_rate": 1.0,
+  "agent_self_catch_rate": 0.3333,
+  "false_gate_count": 0,
+  "false_gate_rate": 0.0,
+  "permission_breach_count": 0,
+  "silent_requirement_scenario_rate": 0.0,
+  "mean_missed_files": 3.44,
+  "median_missed_files": 3,
+  "mean_agent_files_declared": 2.56,
+  "mean_uce_files_flagged": 6.0,
+  "agent_model": "claude-sonnet-4-5",
+  "agent_role": "editor",
+  "repo": "expenses"
+}

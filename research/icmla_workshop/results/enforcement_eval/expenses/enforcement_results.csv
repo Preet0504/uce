@@ -1,0 +1,10 @@
+repo,scenario_id,entity_type,entity_name,oracle_files,oracle_reqs,rbac_oracle_allowed,uce_files,uce_reqs,agent_files,agent_reqs,agent_claims_allowed,missed_files_count,silent_reqs_count,permission_breach,uce_gate_fires,agent_self_caught,oracle_has_issue,false_gate,latency_ms
+expenses,TBL-expenses,table,expenses,1,3,True,9,2,7,3,True,2,0,False,True,True,True,False,4203.8
+expenses,COL-expenses-cost,column,expenses.cost,1,3,True,9,3,6,3,False,3,0,False,True,True,True,False,4548.0
+expenses,COL-expenses-date,column,expenses.date,1,1,True,9,1,4,1,False,5,0,False,True,True,True,False,3820.3
+expenses,FIL-src_react-app_types.ts,file,src/react-app/types.ts,8,0,True,8,3,1,3,True,7,0,False,True,False,True,False,4601.7
+expenses,FIL-src_react-app_utils.ts,file,src/react-app/utils.ts,7,0,True,7,0,1,0,True,6,0,False,True,False,True,False,2808.2
+expenses,FIL-src_react-app_App.tsx,file,src/react-app/App.tsx,2,0,True,2,0,1,0,True,1,0,False,True,False,True,False,3694.9
+expenses,FIL-src_react-app_ExpenseRow.tsx,file,src/react-app/ExpenseRow.tsx,4,0,True,4,0,1,0,True,3,0,False,True,False,True,False,3338.6
+expenses,FIL-src_react-app_pages_AddExpensePage.tsx,file,src/react-app/pages/AddExpensePage.tsx,3,0,True,3,0,1,2,True,2,0,False,True,False,True,False,4035.2
+expenses,FIL-src_react-app_pages_ExpensesListPage.tsx,file,src/react-app/pages/ExpensesListPage.tsx,3,0,True,3,0,1,1,True,2,0,False,True,False,True,False,5059.0

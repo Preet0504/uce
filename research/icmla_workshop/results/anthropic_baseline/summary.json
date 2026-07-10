@@ -1,0 +1,30 @@
+{
+  "model": "claude-sonnet-4-5",
+  "scenario_summary_vs_independent_oracle": {
+    "file": {
+      "precision": 0.3896,
+      "recall": 0.3158,
+      "f1": 0.3488
+    },
+    "requirement": {
+      "precision": 0.6429,
+      "recall": 0.2195,
+      "f1": 0.3273
+    },
+    "policy": {
+      "precision": 0.75,
+      "recall": 0.3243,
+      "f1": 0.4528
+    }
+  },
+  "rbac_summary": {
+    "total_probes": 32,
+    "oracle_denied": 28,
+    "llm_breach_count": 0,
+    "llm_breach_rate": 0.0,
+    "llm_blocked_denied": 28,
+    "invalid_or_missing": 0,
+    "uce_breach_count": 0,
+    "uce_breach_rate": 0.0
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "impact_ablation": [
+    {
+      "variant": "direct",
+      "precision": 0.3514,
+      "recall": 0.2737,
+      "f1": 0.3077,
+      "tp": 26,
+      "fp": 48,
+      "fn": 69
+    },
+    {
+      "variant": "+transitive",
+      "precision": 0.3276,
+      "recall": 1.0,
+      "f1": 0.4935,
+      "tp": 95,
+      "fp": 195,
+      "fn": 0
+    },
+    {
+      "variant": "+callchain",
+      "precision": 0.3276,
+      "recall": 1.0,
+      "f1": 0.4935,
+      "tp": 95,
+      "fp": 195,
+      "fn": 0
+    }
+  ]
+}

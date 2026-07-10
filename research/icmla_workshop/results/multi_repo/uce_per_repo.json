@@ -1,0 +1,46 @@
+{
+  "melodi": {
+    "repo": "melodi",
+    "system": "uce",
+    "n_scenarios": 33,
+    "has_governance": true,
+    "file_precision": 0.4466,
+    "file_recall": 0.9475,
+    "file_f1": 0.6071,
+    "req_f1": 0.5608,
+    "pol_f1": 0.6939
+  },
+  "expenses": {
+    "repo": "expenses",
+    "system": "uce",
+    "n_scenarios": 9,
+    "has_governance": true,
+    "file_precision": 0.5556,
+    "file_recall": 1.0,
+    "file_f1": 0.7143,
+    "req_f1": 0.75,
+    "pol_f1": 0.7273
+  },
+  "spark": {
+    "repo": "spark",
+    "system": "uce",
+    "n_scenarios": 48,
+    "has_governance": false,
+    "file_precision": 0.623,
+    "file_recall": 1.0,
+    "file_f1": 0.7677,
+    "req_f1": null,
+    "pol_f1": null
+  },
+  "talkai": {
+    "repo": "talkai",
+    "system": "uce",
+    "n_scenarios": 24,
+    "has_governance": true,
+    "file_precision": 0.7783,
+    "file_recall": 0.9788,
+    "file_f1": 0.8671,
+    "req_f1": 0.4528,
+    "pol_f1": 0.6296
+  }
+}

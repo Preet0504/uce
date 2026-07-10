@@ -1,0 +1,16 @@
+[
+  {
+    "repo": "talkai",
+    "prompt_only_file_precision": 0.5949,
+    "prompt_only_file_recall": 0.0311,
+    "prompt_only_file_f1": 0.0592,
+    "prompt_only_incomplete_rate": 1.0,
+    "uce_mcp_file_precision": 0.9257,
+    "uce_mcp_file_recall": 0.9821,
+    "uce_mcp_file_f1": 0.9531,
+    "uce_mcp_incomplete_rate": 0.125,
+    "uce_mcp_tool_use_rate": 1.0,
+    "mcp_tool_output_file_recall": 0.9857,
+    "file_recall_lift": 0.951
+  }
+]

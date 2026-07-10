@@ -1,0 +1,18 @@
+{
+  "policy": "RBAC_HARD_001",
+  "n_rules": 12,
+  "n_probes": 99,
+  "oracle_denied": 41,
+  "oracle_allowed": 58,
+  "llm_model": "claude-sonnet-4-5",
+  "llm_breach_count": 2,
+  "llm_breach_rate": 0.0488,
+  "llm_false_deny_count": 2,
+  "llm_false_deny_rate": 0.0345,
+  "llm_invalid_or_missing": 0,
+  "llm_decision_accuracy": 0.9596,
+  "uce_breach_count": 0,
+  "uce_breach_rate": 0.0,
+  "uce_false_deny_count": 0,
+  "uce_decision_accuracy": 1.0
+}

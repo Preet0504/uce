@@ -1,0 +1,20 @@
+{
+  "n_scenarios": 48,
+  "has_governance": false,
+  "has_rbac": false,
+  "n_scenarios_with_oracle_issue": 47,
+  "uce_gate_fires": 48,
+  "catch_rate": 1.0,
+  "agent_self_catch_rate": 0.0208,
+  "false_gate_count": 1,
+  "false_gate_rate": 0.0208,
+  "permission_breach_count": 0,
+  "silent_requirement_scenario_rate": null,
+  "mean_missed_files": 57.75,
+  "median_missed_files": 60,
+  "mean_agent_files_declared": 3.67,
+  "mean_uce_files_flagged": 61.33,
+  "agent_model": "claude-sonnet-4-5",
+  "agent_role": "editor",
+  "repo": "spark"
+}

@@ -1,0 +1,20 @@
+{
+  "n_scenarios": 24,
+  "has_governance": true,
+  "has_rbac": true,
+  "n_scenarios_with_oracle_issue": 24,
+  "uce_gate_fires": 24,
+  "catch_rate": 1.0,
+  "agent_self_catch_rate": 0.0833,
+  "false_gate_count": 0,
+  "false_gate_rate": 0.0,
+  "permission_breach_count": 0,
+  "silent_requirement_scenario_rate": 0.2917,
+  "mean_missed_files": 64.5,
+  "median_missed_files": 67,
+  "mean_agent_files_declared": 3.29,
+  "mean_uce_files_flagged": 66.71,
+  "agent_model": "claude-sonnet-4-5",
+  "agent_role": "editor",
+  "repo": "talkai"
+}
