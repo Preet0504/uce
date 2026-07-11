@@ -1,3 +1,8 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>UCE Gate — Live Demo</title>
 <style>
   :root {
@@ -77,6 +82,7 @@
     font-size: 15px;
     line-height: 1.55;
     -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
   }
 
   body {
@@ -138,6 +144,12 @@
     overflow: hidden;
     margin-bottom: 40px;
   }
+  @media (max-width: 640px) {
+    .stats { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 380px) {
+    .stats { grid-template-columns: 1fr; }
+  }
   .stat {
     background: var(--surface);
     padding: 20px 18px;
@@ -193,8 +205,13 @@
     display: flex;
     flex-direction: column;
     gap: 6px;
-    position: sticky;
-    top: 24px;
+  }
+  /* Sticky nav only makes sense beside a taller scrolling panel (desktop two-column
+     layout, set below .browser's breakpoint). In single-column mode the rail sits
+     directly above the panel in normal flow, so pinning it would let panel content
+     scroll underneath and show through the gaps between rail cards. */
+  @media (min-width: 861px) {
+    .rail { position: sticky; top: 24px; }
   }
   .rail-item {
     display: flex;
@@ -339,6 +356,7 @@
     color: var(--text-dim);
     max-height: 220px;
     overflow-y: auto;
+    overflow-wrap: anywhere;
     margin-top: 8px;
     padding-right: 4px;
   }
@@ -486,7 +504,7 @@
     white-space: pre;
   }
   footer ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; }
-  footer li { font-size: 13px; color: var(--text-dim); }
+  footer li { font-size: 13px; color: var(--text-dim); overflow-wrap: anywhere; }
   footer li a { text-decoration: none; }
   footer li a:hover { text-decoration: underline; }
   .footer-note { color: var(--text-faint); font-size: 12px; margin-top: 18px; }
@@ -500,6 +518,8 @@
     * { transition: none !important; }
   }
 </style>
+</head>
+<body>
 
 <div class="eyebrow">uce &middot; propose_change gate &middot; live replay, real repos</div>
 <h1>The agent declares a plan.<br>The graph checks it against reality.</h1>
@@ -722,3 +742,5 @@
   select(0);
 })();
 </script>
+</body>
+</html>
