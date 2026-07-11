@@ -31,6 +31,10 @@ UCE builds a graph in Neo4j and exposes deterministic analysis via a Python MCP 
 - Requirement {id, description}
 - Policy {id, description}
 - Identifier {name}
+- Role {name, rank} — viewer/editor/admin, ranked
+- AuthorityRule {id, operation, path_pattern, min_role, effect, source_priority} — RBAC rules
+- PersonalData {id, column, table, category, sensitivity, gdpr_articles, subject_type, rationale}
+  — GDPR/PII classification, deterministic pattern-based, no LLM cost
 
 ### 2.2 Relationships
 - (File)-[:IMPORTS]->(File)
@@ -44,11 +48,16 @@ UCE builds a graph in Neo4j and exposes deterministic analysis via a Python MCP 
 - (Requirement)-[:GOVERNS]->(Table|Column)
 - (Policy)-[:ENFORCES]->(Requirement)
 - (File)-[:USES_IDENTIFIER]->(Identifier)
+- (Policy)-[:DEFINES_RULE]->(AuthorityRule)
+- (AuthorityRule)-[:REQUIRES_ROLE]->(Role)
+- (Column)-[:CLASSIFIED_AS]->(PersonalData)
 
 LLM-assisted relationships (optional):
 - (Requirement)-[:IMPLEMENTED_BY]->(File|Function|Class|Method)
 - (Policy)-[:APPLIES_TO]->(File|Function|Class|Method)
 - (Policy)-[:GOVERNS]->(Table|Column)
+
+See [graph_schema.md](graph_schema.md) for the authoritative, always-current schema reference.
 
 ### 2.3 Deterministic Traversal
 UCE performs bounded, multi-hop traversal with explicit relationship constraints. All linking is deterministic and exact-match, with no embeddings or fuzzy resolution. Trace paths are recorded as ordered node sequences.
@@ -84,36 +93,75 @@ risk_score =
 
 These bands reflect enterprise expectations: governance violations are weighted higher than raw file/function counts.
 
-## 5. Evaluation Methodology
-UCE is evaluated against a vanilla agent baseline that performs no deterministic impact analysis.
+Every tool that reports a `risk_score` for a given entity (`impact_analysis`, `impact_table`,
+`impact_column`, `preflight_check`, `risk_assessment`) computes it through this same formula
+against the same unified blast-radius computation, so a given entity gets one consistent score
+regardless of which tool is called.
 
-### 5.1 Baseline
-- No requirement or policy detection
-- No deterministic traversal
-- No trace output or risk scoring
+## 5. Enforcement Gate (`propose_change`)
+Reasoning tools alone are advisory: an agent can call `impact_analysis` and still ignore the
+result. UCE closes that gap with a gate that is mandatory by construction, not by convention.
 
-### 5.2 UCE
-- Detects requirement and policy violations
-- Produces deterministic trace paths
-- Computes calibrated risk score
-- Provides reproducible impact results
+### 5.1 Decision Protocol
+A caller declares a plan — `entity_type`/`entity_name`, the `files_to_edit` it intends to touch,
+and (optionally) the requirements it believes apply. `propose_change` compares this declared plan
+against three deterministic sources of truth:
+1. **Blast radius** — the same unfiltered import/call closure `impact_analysis` computes.
+2. **Governance** — `violated_requirements`/`enforced_policies` for the target entity.
+3. **RBAC** — `evaluate_rules()` over every path in `files_to_edit`.
 
-### 5.3 Metrics
-- Violation detection rate
-- Trace completeness
-- Deterministic reproducibility
-- Governance coverage
+The decision is `allow` only if the declared files are a superset of the real blast radius, no
+governed requirement is left undeclared, and RBAC allows every path. Otherwise the result is
+`block` (default) or `warn` (non-strict mode), and RBAC denial always forces `block` regardless of
+strictness. No entity is guessed from free text on this path — inputs are structured, matching the
+design goal of determinism over heuristic guessing.
 
-This report does not fabricate numeric results. The evaluation protocol is defined and can be executed by scripting MCP tool calls over a scenario set.
+### 5.2 Mandatory Enforcement
+`write_file`/`delete_file` require a `gate_token`, minted only by a `propose_change` call that
+returned `allow`, scoped to the exact operation and file set declared, single-use per file, and
+TTL-bound. There is no configuration path from a bare mutation call to an actual filesystem write
+that skips `propose_change` — `UCE_GATE_ENFORCEMENT=advisory` is an explicit, logged local-dev
+opt-out, never the default. This makes "the agent always calls the gate" a property of the server,
+not an assumption about model behavior or prompt compliance.
 
-## 6. Limitations
+### 5.3 Exact Evidence
+`explain_violation` (and the `evidence` field embedded in every `propose_change` response) returns
+the literal, verbatim requirement/policy document text plus the exact Cypher-derived trace chain
+for each violation — not a summary or an LLM paraphrase. Every field is either a graph query result
+or literal stored text set at ingestion time.
+
+## 6. Evaluation Methodology
+UCE is evaluated against LLM-agent baselines with and without tool access, across 4 real external
+repositories (three database stacks: Postgres/Drizzle, SQLite/Drizzle, Supabase raw SQL), using an
+independent oracle (a from-scratch import-graph resolver and governance-doc parser that does not
+reuse UCE's own Cypher queries).
+
+### 6.1 Real Results
+- Gate catch rate: 100% (114/114 real destructive-change scenarios where an LLM agent's declared
+  plan was incomplete or governance-violating)
+- Mean files missed by the agent per scenario, caught by the gate: 43.9
+- Agent self-catch rate (gate not needed): 7-8%
+- Macro file recall: 0.98 across the 4 repos
+- RBAC: 0% breach rate by construction, vs. 4.9% for Claude Sonnet 4.5 on a hard policy with
+  precedence conflicts
+
+See `research/icmla_workshop/FINDINGS.md` for full methodology, ablations, and significance
+tests, and `research/icmla_workshop/LIVE_TOOL_VALIDATION.md` for confirmation that the shipped
+`propose_change` tool reproduces these numbers exactly, not just the research script that
+originally derived them. This report does not fabricate numeric results — every figure above is
+reproducible via `research/icmla_workshop/replay_propose_change_live.py --ingest`.
+
+## 7. Limitations
 - No fuzzy linking across synonyms or aliases
 - Requires structured requirements and policies
 - Dependent on schema naming consistency
 - Deterministic but not predictive of runtime behavior
+- `propose_change` evaluates a declared file list, not a parsed diff/patch — it does not yet
+  reason about *what* changed within a file, only *which* files are touched
 
-## 7. Future Work
+## 8. Future Work
 - Cross-repository graph linking
 - Temporal versioned graphs for change history
 - Automated requirement extraction from structured documents
-- Integration with CI pipelines for pre-merge governance checks
+- Integration with CI pipelines for pre-merge governance checks (`ci_impact_report` is a first step)
+- Diff/patch-aware `propose_change` input, not just a declared file list

@@ -90,7 +90,7 @@ Evaluator behavior:
 Oracle behavior:
 
 - Requirement/policy truth comes from deterministic graphless logic mirroring ingestion rules.
-- RBAC truth comes from `core.rbac.evaluate_rules()` over RBAC markdown rules.
+- RBAC truth comes from `uce.core.rbac.evaluate_rules()` over RBAC markdown rules.
 
 ## Headline Stored Results
 

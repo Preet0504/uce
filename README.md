@@ -388,12 +388,15 @@ This includes deterministic benchmark reruns, real baseline reruns, and final re
 
 ## Documentation Map
 
-- `docs/DOCUMENTATION.md`
+- `docs/DOCUMENTATION.md` — navigation index for everything below.
+- `docs/CONNECTING_AI_ASSISTANTS.md` — wire up Claude Desktop, Claude Code, Cursor, or Goose, and
+  the `propose_change` → `gate_token` → `write_file` sequence an agent must follow.
 - `docs/TUTORIAL.md`
 - `docs/OPERATOR_RUNBOOK.md`
 - `docs/RELEASE_CHECKLIST.md`
 - `docs/TECHNICAL_REPORT.md`
 - `docs/graph_schema.md`
+- `research/icmla_workshop/EVALUATION.md` — real, independent, multi-repo evaluation methodology.
 - `research/final_report/CS540_Final_Project_Report_UCE_Preet_Patel_Final_Version.pdf`
 - `research/supplemental_benchmarks/README.md`
 

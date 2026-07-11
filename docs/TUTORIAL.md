@@ -2,13 +2,26 @@
 
 This tutorial shows how to run UCE with reproducible Docker, generate Keycloak RBAC tokens, and verify behavior in Goose.
 
+For Claude Desktop, Claude Code, or Cursor instead of Goose, see
+[CONNECTING_AI_ASSISTANTS.md](CONNECTING_AI_ASSISTANTS.md) — the stack/Keycloak/token steps below
+are identical, only the client config at the end differs.
+
 ## 1) Start the Stack
 
 ```bash
-copy .env.docker.example .env.docker
-# Linux/macOS: cp .env.docker.example .env.docker
+copy docker\configs\client.env.example docker\configs\client.env
+# Linux/macOS: cp docker/configs/client.env.example docker/configs/client.env
+```
 
-docker compose --env-file .env.docker up -d --build
+Edit `docker/configs/client.env` and set `UCE_TARGET_REPO` to the project you want UCE to
+analyze, plus your `ANTHROPIC_API_KEY` (or another LLM provider — see the README's "Data Privacy"
+section for a fully local Ollama profile).
+
+```bash
+docker compose \
+  -f docker/compose/client/docker-compose.client.yml \
+  --env-file docker/configs/client.env \
+  up -d --build
 ```
 
 Services:
@@ -73,26 +86,37 @@ Do not expose `http://127.0.0.1:8000/mcp/` to end users.
 
 Run the same mutation request in each role profile:
 
-1. Viewer: `write_file` should be denied.
-2. Editor: write in allowed scope should succeed.
-3. Editor: write in protected RBAC/policy path should be denied.
-4. Admin: write/delete in admin scope should succeed.
+Every mutation now goes through the gate: `propose_change` first (mints a `gate_token` only on
+`decision: "allow"`), then `write_file`/`delete_file` with that token — see
+[CONNECTING_AI_ASSISTANTS.md](CONNECTING_AI_ASSISTANTS.md#the-gate-what-your-assistant-actually-has-to-do)
+for the exact call shape. Validate:
 
-Use `authorize_change` to inspect why a path was allowed/denied.
+1. Viewer: `propose_change` for any write should come back `decision: "block"` with
+   `rbac.allowed: false` — no token is issued, so `write_file` cannot proceed at all.
+2. Editor: `propose_change` for a write in an allowed scope, with a `files_to_edit` list that
+   actually covers the real blast radius, should come back `decision: "allow"` with a
+   `gate_token`; `write_file` with that token should succeed.
+3. Editor: `propose_change` for a write in a protected RBAC/policy path should come back
+   `decision: "block"`, `rbac.allowed: false`.
+4. Admin: `propose_change` for a write/delete in admin scope should come back `decision: "allow"`.
 
-## 6) Compliance/Impact Queries in Goose
+Use `authorize_change` to inspect an RBAC decision on its own, without running the full gate.
+
+## 6) Compliance/Impact and Gate Queries in Goose
 
 Ask Goose to call:
-- `risk_assessment`
-- `explain_change`
-- `impact_analysis`
+- `propose_change` — the gate: declare a plan, get allow/warn/block plus a `gate_token`.
+- `explain_violation` — literal requirement/policy text and exact trace chains for a `block`.
+- `ci_impact_report` — the same gate applied to a whole changeset (multiple files) at once.
+- `risk_assessment` / `explain_change` / `impact_analysis` — free-text or structured impact
+  lookups (the first two guess the target entity from text; not authoritative for a decision).
 
 These read graph relationships and report signals including `violated_requirements` and policy links when available.
 
 ## 7) Shutdown and Cleanup
 
 ```bash
-docker compose --env-file .env.docker down
+docker compose -f docker/compose/client/docker-compose.client.yml --env-file docker/configs/client.env down
 # destructive reset:
-# docker compose --env-file .env.docker down -v
+# docker compose -f docker/compose/client/docker-compose.client.yml --env-file docker/configs/client.env down -v
 ```
